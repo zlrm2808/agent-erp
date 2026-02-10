@@ -1,0 +1,74 @@
+// Tenant Schema - This will be used to generate the Prisma Client for EACH company database
+// Each time a company is created, we apply this schema to its private database.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client/tenant"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("TENANT_DATABASE_URL")
+}
+
+// Configuration & Compliance
+model FiscalSetting {
+  id                String   @id @default(cuid())
+  controlNumberSeq  Int      @default(1)    // Sequence for "Número de Control" (PROV/0102)
+  invoiceNumberSeq  Int      @default(1)    // Sequence for "Factura"
+  taxRate           Float    @default(16.0) // Default IVA 16%
+  isDigitalInvoice  Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+}
+
+// Inventory Module
+model Product {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  isExempt    Boolean  @default(false) // (E) in invoices for exempt items
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Sales & Compliance
+model Invoice {
+  id              String   @id @default(cuid())
+  invoiceNumber   String   @unique // Format: 00-000001
+  controlNumber   String   @unique // Format: 00-00000001
+  date            DateTime @default(now())
+  customerName    String
+  customerRif     String
+  customerAddress String?
+  baseAmount      Float
+  taxAmount       Float
+  totalAmount     Float
+  status          String   @default("issued") // issued, cancelled, contingency
+  items           InvoiceItem[]
+  auditLog        InvoiceAudit[]
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  productId   String
+  productName String
+  quantity    Int
+  unitPrice   Float
+  taxRate     Float
+  total       Float
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+}
+
+model InvoiceAudit {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  action      String   // created, printed, cancelled
+  reason      String?
+  timestamp   DateTime @default(now())
+  userId      String   // ID of the user who performed the action
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+}

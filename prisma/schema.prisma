@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Global Database Schema (System Level)
+model Company {
+  id          String        @id @default(cuid())
+  name        String
+  rif         String        @unique // Tax identification (Venezuela)
+  address     String // Required by SENIAT
+  phone       String? // Recommended for invoice header
+  website     String?
+  databaseUrl String // To connect to the tenant-specific database
+  status      String        @default("active") // active, suspended, etc.
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  users       UserCompany[]
+}
+
+model User {
+  id                String              @id @default(cuid())
+  username          String              @unique
+  password          String // Should be hashed
+  realName          String?
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  companies         UserCompany[]
+  sessions          Session[]
+  InventoryMovement InventoryMovement[]
+}
+
+// Pivot table for Multi-company access
+model UserCompany {
+  userId    String
+  companyId String
+  role      String  @default("operator") // admin, supervisor, operator
+  user      User    @relation(fields: [userId], references: [id])
+  company   Company @relation(fields: [companyId], references: [id])
+
+  @@id([userId, companyId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// Inventory Module
+model ProductCategory {
+  id          String    @id @default(cuid())
+  companyId   String
+  name        String
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([companyId, name])
+}
+
+model Product {
+  id          String              @id @default(cuid())
+  companyId   String
+  categoryId  String?
+  sku         String
+  name        String
+  description String?
+  costPrice   Float               @default(0)
+  salePrice   Float               @default(0)
+  stock       Int                 @default(0)
+  minStock    Int                 @default(5)
+  category    ProductCategory?    @relation(fields: [categoryId], references: [id])
+  movements   InventoryMovement[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([companyId, sku])
+}
+
+model InventoryMovement {
+  id        String   @id @default(cuid())
+  companyId String
+  productId String
+  type      String // IN, OUT, ADJUSTMENT
+  quantity  Int
+  reference String? // Order ID, Adjustment Reason
+  notes     String?
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}

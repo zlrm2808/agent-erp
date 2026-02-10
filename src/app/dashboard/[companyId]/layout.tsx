@@ -1,0 +1,31 @@
+import { Sidebar } from "@/modules/dashboard/sidebar";
+import { Topbar } from "@/modules/dashboard/topbar";
+import { getCurrentUser } from "@/modules/auth/session";
+
+export default async function DashboardLayout({
+    children,
+    params,
+}: {
+    children: React.ReactNode;
+    params: Promise<{ companyId: string }>;
+}) {
+    const { companyId } = await params;
+    const user = await getCurrentUser();
+
+    return (
+        <div className="flex h-screen bg-[#faf9f8]">
+            {/* Dynamic Sidebar */}
+            <Sidebar companyId={companyId} user={user} />
+
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <Topbar />
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#faf9f8] p-6 custom-scrollbar">
+                    <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {children}
+                    </div>
+                </main>
+            </div>
+        </div>
+    );
+}
