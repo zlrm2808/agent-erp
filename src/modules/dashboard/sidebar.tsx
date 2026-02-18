@@ -6,12 +6,8 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Box,
-  ShoppingCart,
   Users,
-  Receipt,
   Settings,
-  X,
-  Menu,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -19,9 +15,9 @@ import {
   User as UserIcon,
   Calendar,
   Building2,
-  Briefcase,
-  MoreHorizontal,
+  ChevronDown,
   ChevronsUpDown,
+  Home,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,23 +35,26 @@ import type { User } from "@prisma/client";
 
 const menuCategories = (companyId: string) => [
   {
-    title: "Principal",
+    title: "Home",
+    icon: Home,
     items: [
-      { icon: LayoutDashboard, label: "Panel Principal", href: `/dashboard/${companyId}/overview` },
-      { icon: TrendingUp, label: "Reportes", href: `/dashboard/${companyId}/reports` },
+      { label: "Role Center", href: `/dashboard/${companyId}/overview`, icon: LayoutDashboard },
     ]
   },
   {
     title: "Módulos",
+    icon: Box,
     items: [
-      { icon: Box, label: "Inventario", href: `/dashboard/${companyId}/inventory` },
+      { label: "Inventario", href: `/dashboard/${companyId}/inventory`, icon: Box },
+      { label: "Reportes", href: `/dashboard/${companyId}/reports`, icon: TrendingUp },
     ]
   },
   {
     title: "Administración",
+    icon: Users,
     items: [
-      { icon: Users, label: "Clientes", href: `/dashboard/${companyId}/customers` },
-      { icon: Settings, label: "Configuración", href: `/dashboard/${companyId}/settings` },
+      { label: "Clientes", href: `/dashboard/${companyId}/customers`, icon: Users },
+      { label: "Configuración", href: `/dashboard/${companyId}/settings`, icon: Settings },
     ]
   }
 ];
@@ -63,7 +62,15 @@ const menuCategories = (companyId: string) => [
 export function Sidebar({ companyId, user }: { companyId: string; user: User | null }) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [openCategories, setOpenCategories] = useState<string[]>(["Home", "Módulos"]);
+
   const categories = menuCategories(companyId);
+
+  const toggleCategory = (title: string) => {
+    setOpenCategories(prev =>
+      prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+    );
+  };
 
   const handleLogout = async () => {
     await logoutAction();
@@ -72,150 +79,130 @@ export function Sidebar({ companyId, user }: { companyId: string; user: User | n
   return (
     <aside
       className={cn(
-        "relative h-screen bg-[#f3f2f1] text-[#323130] transition-all duration-300 flex flex-col z-40 border-r border-[#e1dfdd]",
-        isCollapsed ? "w-16" : "w-64"
+        "relative h-[calc(100vh-48px)] bg-[#f6f6f6] border-r border-[#d2d0ce] transition-all duration-300 flex flex-col z-40 shrink-0 mt-12",
+        isCollapsed ? "w-12" : "w-65"
       )}
     >
-      {/* Brand Section */}
-      <div className="h-12 flex items-center px-4 border-b border-[#e1dfdd] shrink-0 bg-white">
-        {!isCollapsed && (
-          <span className="text-lg font-bold tracking-tight text-[#001d3d]">
-            Agent<span className="text-primary">ERP</span>
-          </span>
-        )}
-        {isCollapsed && (
-          <span className="text-lg font-bold text-primary mx-auto">A</span>
-        )}
-      </div>
-
       {/* Navigation Section */}
-      <nav className="flex-1 overflow-y-auto py-2 scrollbar-thin scrollbar-thumb-slate-200">
-        {categories.map((category, catIdx) => (
-          <div key={catIdx} className="mb-4">
-            <div className={cn(
-              "px-5 py-2 text-[10px] font-bold text-[#605e5c] uppercase tracking-wider transition-opacity duration-300 min-h-[32px] overflow-hidden whitespace-nowrap",
-              isCollapsed ? "opacity-0" : "opacity-100"
-            )}>
-              {category.title}
+      <nav className="flex-1 overflow-y-auto py-2 bc-scrollbar">
+        {categories.map((category) => {
+          const isOpen = openCategories.includes(category.title);
+
+          return (
+            <div key={category.title} className="mb-1">
+              {/* Header de Categoría (Estilo BC) */}
+              <button
+                onClick={() => !isCollapsed && toggleCategory(category.title)}
+                className={cn(
+                  "w-full flex items-center px-4 py-2 text-[#323130] hover:bg-[#ebebeb] transition-colors group",
+                  isCollapsed && "justify-center px-0"
+                )}
+              >
+                <category.icon className={cn("shrink-0 size-5 text-[#605e5c] group-hover:text-[#323130]", !isCollapsed && "mr-3")} />
+                {!isCollapsed && (
+                  <>
+                    <span className="flex-1 text-left text-sm font-semibold">{category.title}</span>
+                    <ChevronDown className={cn("size-4 text-[#605e5c] transition-transform", isOpen ? "" : "-rotate-90")} />
+                  </>
+                )}
+              </button>
+
+              {/* Items de Categoría */}
+              {(!isCollapsed && isOpen) && (
+                <div className="mt-1">
+                  {category.items.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "block pl-12 pr-4 py-2 text-sm transition-colors border-l-4",
+                          isActive
+                            ? "border-[#0078d4] bg-[#eff6fc] text-[#323130] font-medium"
+                            : "border-transparent text-[#323130] hover:bg-[#ebebeb]"
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            <ul className="space-y-0.5 px-2">
-              {category.items.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-md transition-all duration-200 group",
-                        isActive
-                          ? "bg-white text-[#001d3d] shadow-sm border border-[#e1dfdd] font-bold"
-                          : "text-[#323130] hover:bg-[#edebe9]"
-                      )}
-                    >
-                      <item.icon className={cn("shrink-0 size-5", isActive ? "text-primary" : "text-[#605e5c]")} strokeWidth={isActive ? 2.5 : 2} />
-                      {!isCollapsed && (
-                        <span className="text-[13px]">{item.label}</span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
+          );
+        })}
+
+        {/* Sección Favoritos (Estilo visual BC) */}
+        {!isCollapsed && (
+          <div className="mt-4 px-4 py-2 border-t border-[#d2d0ce]">
+            <h3 className="text-[11px] font-bold text-[#605e5c] uppercase mb-2 tracking-wider">Favoritos</h3>
+            <ul className="space-y-1">
+              <li className="text-sm text-[#323130] hover:underline cursor-pointer py-1">Historial de Ventas</li>
+              <li className="text-sm text-[#323130] hover:underline cursor-pointer py-1">Stock Crítico</li>
             </ul>
-            {catIdx < categories.length - 1 && (
-              <div className={cn(
-                "mx-4 my-2 border-t border-[#e1dfdd]/50 transition-opacity duration-300",
-                isCollapsed ? "opacity-0" : "opacity-100"
-              )} />
-            )}
           </div>
-        ))}
+        )}
       </nav>
 
-      {/* Toggle Button */}
+      {/* Botón de Colapso (Flotante) */}
       <Button
         variant="ghost"
         size="icon"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-14 h-6 w-6 rounded-full bg-white text-[#323130] hover:bg-[#f3f2f1] border border-[#e1dfdd] shadow-sm z-50 p-0"
+        className="absolute -right-3 top-4 h-6 w-6 rounded-full bg-white text-[#323130] border border-[#d2d0ce] shadow-sm z-50 p-0 hover:bg-[#f3f2f1]"
       >
         {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </Button>
 
-      {/* Footer Section - User Profile */}
-      <div className="border-t border-[#e1dfdd] p-2 bg-white mt-auto">
+      {/* User Footer Section */}
+      <div className="border-t border-[#d2d0ce] p-2 bg-white mt-auto">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               className={cn(
-                "w-full flex items-center gap-3 p-2 h-auto hover:bg-[#f3f2f1] rounded-md transition-colors border border-transparent hover:border-ring outline-none",
+                "w-full flex items-center gap-3 p-2 h-auto hover:bg-[#f3f2f1] rounded-sm transition-colors",
                 isCollapsed ? "justify-center px-0" : "justify-start"
               )}
             >
-              <Avatar className="h-8 w-8 border border-[#e1dfdd] shrink-0">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
-                  {user?.realName?.[0] || user?.username?.[0] || "U"}
+              <Avatar className="h-7 w-7 border border-[#d2d0ce] shrink-0">
+                <AvatarFallback className="bg-[#c7e0f4] text-[#005a9e] text-[10px] font-bold">
+                  {user?.realName?.[0] || "U"}
                 </AvatarFallback>
               </Avatar>
 
               {!isCollapsed && (
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-[12px] font-bold text-[#323130] truncate">
-                    {user?.realName || user?.username || "Usuario"}
+                  <p className="text-[12px] font-semibold text-[#323130] truncate leading-tight">
+                    {user?.realName || "Usuario"}
                   </p>
                   <p className="text-[10px] text-[#605e5c] truncate">
-                    {user?.username}
+                    Online
                   </p>
                 </div>
               )}
-
-              {!isCollapsed && (
-                <ChevronsUpDown className="h-4 w-4 text-[#605e5c] shrink-0" />
-              )}
+              {!isCollapsed && <ChevronsUpDown className="h-3 w-3 text-[#605e5c]" />}
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent
-            className="w-56"
-            align="start"
-            alignOffset={isCollapsed ? 50 : 0}
-            sideOffset={8}
-          >
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.realName || "Usuario"}</p>
-                <p className="text-xs leading-none text-muted-foreground">{user?.username}</p>
-              </div>
-            </DropdownMenuLabel>
+          <DropdownMenuContent className="w-56" align={isCollapsed ? "center" : "start"} side="right" sideOffset={10}>
+            <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <Calendar className="mr-2 h-4 w-4" />
-              <span>Seleccionar Fecha</span>
-            </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/select-company" className="w-full cursor-pointer">
-                <Building2 className="mr-2 h-4 w-4" />
-                <span>Seleccionar Empresa</span>
+              <Link href="/select-company" className="cursor-pointer">
+                <Building2 className="mr-2 h-4 w-4" /> Cambiar Empresa
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem disabled>
-              <UserIcon className="mr-2 h-4 w-4" />
-              <span>Editar Perfil</span>
+              <Calendar className="mr-2 h-4 w-4" /> Período Contable
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-rose-600 focus:text-rose-600 focus:bg-rose-50 cursor-pointer">
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Cerrar Sesión</span>
+              <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {!isCollapsed && (
-          <div className="mt-2 text-[9px] text-[#a19f9d] font-medium text-center uppercase tracking-tight">
-            v1.2.0 • Dynamics Theme
-          </div>
-        )}
       </div>
     </aside>
   );

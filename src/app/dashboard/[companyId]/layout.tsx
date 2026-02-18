@@ -20,7 +20,7 @@ export default async function DashboardLayout({
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Topbar />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#faf9f8] p-6 custom-scrollbar">
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6 custom-scrollbar">
                     <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {children}
                     </div>

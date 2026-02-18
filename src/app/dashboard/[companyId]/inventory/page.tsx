@@ -1,7 +1,8 @@
 import { InventoryRepository } from "@/modules/inventory/repository";
 import { InventoryStats } from "@/modules/inventory/components/inventory-stats";
-import { Ribbon, RibbonGroup, RibbonButton } from "@/components/ui/ribbon";
-
+import * as R from "@/components/ui/MicrosoftRibbon";
+import { File, Edit, Trash, ArrowUpFromDot, ArrowDownToDot, List, Package, BoxesIcon } from "lucide-react";
+import { KpiCard } from "@/components/ui/KpiCard";
 export default async function InventoryPage({
   params,
 }: {
@@ -11,53 +12,64 @@ export default async function InventoryPage({
   const stats = await InventoryRepository.getDashboardStats(companyId);
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-0 mt-12">
       {/* Ribbon */}
-      <Ribbon
-        title="Inventario"
-        description="Gestión de productos, existencias y movimientos"
-      >
-        <RibbonGroup title="Nuevo">
-          <RibbonButton
-            icon="Plus"
-            label="Producto"
-            href={`/dashboard/${companyId}/inventory/products/new`}
-            variant="primary"
-          />
-        </RibbonGroup>
-
-        <RibbonGroup title="Movimientos">
-          <RibbonButton
-            icon="ArrowUp"
-            label="Entrada"
-            href={`/dashboard/${companyId}/inventory/movements/new?type=IN`}
-          />
-          <RibbonButton
-            icon="ArrowDown"
-            label="Salida"
-            href={`/dashboard/${companyId}/inventory/movements/new?type=OUT`}
-          />
-        </RibbonGroup>
-
-        <RibbonGroup title="Ver">
-          <RibbonButton
-            icon="List"
-            label="Productos"
-            href={`/dashboard/${companyId}/inventory/products`}
-          />
-          <RibbonButton
-            icon="Package"
-            label="Stock"
-            href={`/dashboard/${companyId}/inventory`}
-          />
-        </RibbonGroup>
-      </Ribbon>
+      <R.RibbonContainer>
+        <R.RibbonMenu>
+          <R.RibbonTab label="Home" />
+        </R.RibbonMenu>
+        <div className="flex h-24 overflow-x-auto no-scrollbar items-stretch">
+          <R.RibbonGroup label="Productos">
+            <R.RibbonBtnLarge icon={File} label="Nuevo" />
+            <div className="flex-col">
+              <R.RibbonBtnSmall icon={Edit} label="Editar" color="text-green-900" />
+              <R.RibbonBtnSmall icon={Trash} label="Eliminar" color="text-red-900" />
+            </div>
+          </R.RibbonGroup>
+          <R.RibbonGroup label="Movimientos">
+            <R.RibbonBtnLarge icon={ArrowDownToDot} label="Entradas" />
+            <R.RibbonBtnLarge icon={ArrowUpFromDot} label="Salidas" />
+          </R.RibbonGroup>
+          <R.RibbonGroup label="Ver">
+            <R.RibbonBtnLarge icon={List} label="Productos" />
+            <div className="flex-col">
+              <R.RibbonBtnSmall icon={Package} label="Stock" color="text-green-900" />
+              <R.RibbonBtnSmall icon={BoxesIcon} label="Kardex" color="text-blue-700" />
+            </div>
+          </R.RibbonGroup>
+        </div>
+      </R.RibbonContainer>
 
       {/* Content */}
       <div className="py-3 space-y-3">
 
         {/* Stats */}
-        <InventoryStats stats={stats} />
+        <div className="flex justify-between">
+          <KpiCard
+            titulo="Total de Productos"
+            contenido={"12"}
+            descripcion="Items registrados en el sistema"
+            color="#0078d4"
+          />
+          <KpiCard
+            titulo="Valor Total de Inventario"
+            contenido={"50.458$"}
+            descripcion="Costo total del inventario actual"
+            color="green"
+          />
+          <KpiCard
+            titulo="Alerta de Stock"
+            contenido={"3"}
+            descripcion="Items por debajo del stock mínimo"
+            color="red"
+          />
+          <KpiCard
+            titulo="Items sin movimientos"
+            contenido={"11"}
+            descripcion="Items inactivos en los últimos 2 meses"
+            color="orange"
+          />
+        </div>
 
         {/* Recent Movements Placeholder */}
         <div className="rounded-lg border border-[#e1dfdd] bg-white p-6 shadow-sm">
