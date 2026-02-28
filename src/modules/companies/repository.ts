@@ -26,12 +26,50 @@ export const CompanyRepository = {
     },
 
     /**
-     * Creates a new company and associates it with a user as an admin
+     * Validates if a user has access to company.
      */
-    async create(data: { name: string; rif: string; address: string; phone?: string; databaseUrl: string }, userId: string) {
+    async userHasAccess(userId: string, companyId: string) {
+        const membership = await db.userCompany.findUnique({
+            where: {
+                userId_companyId: {
+                    userId,
+                    companyId,
+                },
+            },
+        });
+
+        return Boolean(membership);
+    },
+
+    /**
+     * Creates a new company and associates it with a user as an admin.
+     * Also creates the first mandatory branch.
+     */
+    async create(
+        data: {
+            name: string;
+            rif: string;
+            address: string;
+            phone?: string;
+            databaseUrl: string;
+            branchName: string;
+        },
+        userId: string,
+    ) {
         return db.company.create({
             data: {
-                ...data,
+                name: data.name,
+                rif: data.rif,
+                address: data.address,
+                phone: data.phone,
+                databaseUrl: data.databaseUrl,
+                branches: {
+                    create: {
+                        name: data.branchName,
+                        address: data.address,
+                        phone: data.phone,
+                    },
+                },
                 users: {
                     create: {
                         userId,

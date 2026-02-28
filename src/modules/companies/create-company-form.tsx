@@ -15,6 +15,7 @@ const createCompanySchema = z.object({
     rif: z.string().min(5, "El RIF debe ser válido (Ej. J-12345678-9)"),
     address: z.string().min(10, "La dirección debe ser detallada (mín. 10 caracteres)"),
     phone: z.string().optional(),
+    branchName: z.string().min(2, "Debes indicar al menos una sucursal (ej. Principal o Única)"),
 });
 
 type CreateCompanyValues = z.infer<typeof createCompanySchema>;
@@ -30,6 +31,7 @@ export function CreateCompanyForm({ onSuccess }: { onSuccess: () => void }) {
             rif: "",
             address: "",
             phone: "",
+            branchName: "Principal",
         },
     });
 
@@ -44,7 +46,7 @@ export function CreateCompanyForm({ onSuccess }: { onSuccess: () => void }) {
                 form.reset();
                 onSuccess();
             }
-        } catch (err) {
+        } catch {
             setError("Error al crear la empresa.");
         } finally {
             setIsLoading(false);
@@ -80,11 +82,18 @@ export function CreateCompanyForm({ onSuccess }: { onSuccess: () => void }) {
                 )}
             </div>
             <div className="space-y-2">
+                <Label htmlFor="branchName">Primera sucursal (obligatoria)</Label>
+                <Input id="branchName" {...form.register("branchName")} placeholder="Ej. Principal, Única, Sede Centro" />
+                {form.formState.errors.branchName && (
+                    <p className="text-xs text-red-500">{form.formState.errors.branchName.message}</p>
+                )}
+            </div>
+            <div className="space-y-2">
                 <Label htmlFor="phone">Teléfono de Contacto (Opcional)</Label>
                 <Input id="phone" {...form.register("phone")} placeholder="Ej. 0212-1234567" />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Crear Empresa e Inicializar Base de Datos"}
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Crear Empresa + Sucursal inicial"}
             </Button>
         </form>
     );

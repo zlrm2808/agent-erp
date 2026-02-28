@@ -36,7 +36,7 @@ export function AddCompanyCard() {
                         Registrar Nueva Empresa
                     </DialogTitle>
                     <DialogDescription>
-                        Ingresa los datos fiscales para crear una nueva base de datos.
+                        Ingresa los datos fiscales y registra al menos una sucursal inicial para la empresa.
                     </DialogDescription>
                 </DialogHeader>
                 <CreateCompanyForm onSuccess={() => setOpen(false)} />
