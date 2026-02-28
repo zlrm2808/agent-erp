@@ -26,6 +26,22 @@ export const CompanyRepository = {
     },
 
     /**
+     * Validates if a user has access to company.
+     */
+    async userHasAccess(userId: string, companyId: string) {
+        const membership = await db.userCompany.findUnique({
+            where: {
+                userId_companyId: {
+                    userId,
+                    companyId,
+                },
+            },
+        });
+
+        return Boolean(membership);
+    },
+
+    /**
      * Creates a new company and associates it with a user as an admin
      */
     async create(data: { name: string; rif: string; address: string; phone?: string; databaseUrl: string }, userId: string) {

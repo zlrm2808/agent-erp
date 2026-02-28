@@ -3,6 +3,7 @@
 import { loginSchema, type LoginValues } from "./schema";
 import { AuthRepository } from "./repository";
 import { cookies } from "next/headers";
+import { hashPassword, isHashedPassword, verifyPassword } from "./password";
 
 /**
  * loginAction - Server Action for user authentication.
@@ -28,16 +29,20 @@ export async function loginAction(data: LoginValues) {
         }
 
         // 3. Verify Password
-        // IMPORTANT: In a real app, use bcrypt or argon2 to compare hashed passwords.
-        // For this initial setup, we are doing a simplified check.
-        if (user.password !== password) {
+        const isValidPassword = await verifyPassword(password, user.password);
+        if (!isValidPassword) {
             return { error: "Usuario o contraseña incorrectos." };
+        }
+
+        if (!isHashedPassword(user.password)) {
+            await AuthRepository.updatePassword(user.id, await hashPassword(password));
         }
 
         // 4. Create Session
         const token = crypto.randomUUID();
         const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
 
+        await AuthRepository.invalidateUserSessions(user.id);
         await AuthRepository.createSession(user.id, token, expiresAt);
 
         // 5. Set Cookie
