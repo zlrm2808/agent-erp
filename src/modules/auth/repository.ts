@@ -1,5 +1,5 @@
 import { db } from "@/lib/orm";
-import type { User } from "@prisma/client";
+import type { Session, User } from "@prisma/client";
 
 /**
  * Authentication Repository
@@ -16,9 +16,26 @@ export const AuthRepository = {
     },
 
     /**
+     * Updates a user password hash
+     */
+    async updatePassword(userId: string, password: string): Promise<User> {
+        return db.user.update({
+            where: { id: userId },
+            data: { password },
+        });
+    },
+
+    /**
+     * Invalidates all active sessions for a specific user.
+     */
+    async invalidateUserSessions(userId: string): Promise<{ count: number }> {
+        return db.session.deleteMany({ where: { userId } });
+    },
+
+    /**
      * Creates a new session for a user
      */
-    async createSession(userId: string, token: string, expiresAt: Date) {
+    async createSession(userId: string, token: string, expiresAt: Date): Promise<Session> {
         return db.session.create({
             data: {
                 userId,
@@ -36,5 +53,12 @@ export const AuthRepository = {
             where: { token },
             include: { user: true },
         });
+    },
+
+    /**
+     * Deletes session by token.
+     */
+    async deleteSessionByToken(token: string): Promise<{ count: number }> {
+        return db.session.deleteMany({ where: { token } });
     },
 };

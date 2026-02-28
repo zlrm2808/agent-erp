@@ -1,6 +1,7 @@
 import { Sidebar } from "@/modules/dashboard/sidebar";
 import { Topbar } from "@/modules/dashboard/topbar";
-import { getCurrentUser } from "@/modules/auth/session";
+import { assertCompanyAccess } from "@/modules/companies/access";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
     children,
@@ -10,14 +11,15 @@ export default async function DashboardLayout({
     params: Promise<{ companyId: string }>;
 }) {
     const { companyId } = await params;
-    const user = await getCurrentUser();
+    const user = await assertCompanyAccess(companyId).catch(() => null);
+
+    if (!user) {
+        redirect("/dashboard");
+    }
 
     return (
         <div className="flex h-screen bg-[#faf9f8]">
-            {/* Dynamic Sidebar */}
             <Sidebar companyId={companyId} user={user} />
-
-            {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Topbar />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6 custom-scrollbar">

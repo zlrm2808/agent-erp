@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentUser } from "@/modules/auth/session";
+import { assertCompanyAccess } from "@/modules/companies/access";
 import { InventoryRepository } from "./repository";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -18,9 +18,9 @@ const productSchema = z.object({
 });
 
 export async function createProductAction(companyId: string, formData: FormData) {
-    const user = await getCurrentUser();
-
-    if (!user) {
+    try {
+        await assertCompanyAccess(companyId);
+    } catch {
         return { error: "No autorizado" };
     }
 
@@ -53,9 +53,9 @@ export async function createProductAction(companyId: string, formData: FormData)
 }
 
 export async function updateProductAction(companyId: string, productId: string, formData: FormData) {
-    const user = await getCurrentUser();
-
-    if (!user) {
+    try {
+        await assertCompanyAccess(companyId);
+    } catch {
         return { error: "No autorizado" };
     }
 
@@ -97,9 +97,10 @@ const movementSchema = z.object({
 });
 
 export async function recordMovementAction(companyId: string, formData: FormData) {
-    const user = await getCurrentUser();
-
-    if (!user) {
+    let user;
+    try {
+        user = await assertCompanyAccess(companyId);
+    } catch {
         return { error: "No autorizado" };
     }
 

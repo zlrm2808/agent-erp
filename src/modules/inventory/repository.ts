@@ -1,96 +1,87 @@
 import { db } from "@/lib/orm";
+import type { Prisma } from "@prisma/client";
+
+const MOVEMENT_WINDOW_DAYS = 60;
 
 export const InventoryRepository = {
-    /**
-     * Get all product categories for a company
-     */
     async getCategories(companyId: string) {
         return db.productCategory.findMany({
             where: { companyId },
             include: { _count: { select: { products: true } } },
-            orderBy: { name: "asc" }
+            orderBy: { name: "asc" },
         });
     },
 
-    /**
-     * Create a new product category
-     */
     async createCategory(companyId: string, data: { name: string; description?: string }) {
         return db.productCategory.create({
             data: {
                 companyId,
-                ...data
-            }
+                ...data,
+            },
         });
     },
 
-    /**
-     * Get all products for a company
-     */
     async getProducts(companyId: string) {
         return db.product.findMany({
             where: { companyId },
             include: { category: true },
-            orderBy: { name: "asc" }
+            orderBy: { name: "asc" },
         });
     },
 
-    /**
-     * Get a single product by ID
-     */
     async getProductById(companyId: string, productId: string) {
-        return db.product.findUnique({
-            where: { id: productId },
-            include: { category: true }
+        return db.product.findFirst({
+            where: { id: productId, companyId },
+            include: { category: true },
         });
     },
 
-    /**
-     * Create a new product
-     */
-    async createProduct(companyId: string, data: {
-        sku: string;
-        name: string;
-        description?: string;
-        categoryId?: string;
-        costPrice?: number;
-        salePrice?: number;
-        minStock?: number;
-    }) {
+    async createProduct(
+        companyId: string,
+        data: {
+            sku: string;
+            name: string;
+            description?: string;
+            categoryId?: string;
+            costPrice?: number;
+            salePrice?: number;
+            minStock?: number;
+            stock?: number;
+        },
+    ) {
         return db.product.create({
             data: {
                 companyId,
-                ...data
-            }
+                ...data,
+            },
         });
     },
 
-    /**
-     * Update an existing product
-     */
-    async updateProduct(companyId: string, productId: string, data: {
-        sku?: string;
-        name?: string;
-        description?: string;
-        categoryId?: string;
-        costPrice?: number;
-        salePrice?: number;
-        minStock?: number;
-        stock?: number;
-    }) {
+    async updateProduct(
+        companyId: string,
+        productId: string,
+        data: {
+            sku?: string;
+            name?: string;
+            description?: string;
+            categoryId?: string;
+            costPrice?: number;
+            salePrice?: number;
+            minStock?: number;
+            stock?: number;
+        },
+    ) {
+        const existing = await db.product.findFirst({ where: { id: productId, companyId }, select: { id: true } });
+        if (!existing) {
+            throw new Error("PRODUCT_NOT_FOUND");
+        }
+
         return db.product.update({
-            where: { id: productId, companyId },
-            data: {
-                ...data, // stock update here overrides arithmetic if passed directly? 
-                // Usually stock is updated via movements, but editing product might allow direct stock correction (though hazardous for audit).
-                // For now allow it as "correction".
-            }
+            where: { id: existing.id },
+            data,
         });
     },
-    /**
-     * Record an inventory movement and update stock
-     * This uses a transaction to ensure data integrity
-     */
+
     async recordMovement(data: {
         companyId: string;
         productId: string;
@@ -100,19 +91,27 @@ export const InventoryRepository = {
         reference?: string;
         notes?: string;
     }) {
-        return db.$transaction(async (tx: any) => {
-            // 1. Calculate stock change
-            const stockChange = data.type === "OUT" ? -data.quantity : data.quantity;
-
-            // 2. Update product stock
-            const product = await tx.product.update({
-                where: { id: data.productId },
-                data: {
-                    stock: { increment: stockChange }
-                }
+        return db.$transaction(async (tx: Prisma.TransactionClient) => {
+            const product = await tx.product.findFirst({
+                where: {
+                    id: data.productId,
+                    companyId: data.companyId,
+                },
             });
 
-            // 3. Create movement record
+            if (!product) {
+                throw new Error("PRODUCT_NOT_FOUND");
+            }
+
+            const stockChange = data.type === "OUT" ? -data.quantity : data.quantity;
+
+            const updatedProduct = await tx.product.update({
+                where: { id: product.id },
+                data: {
+                    stock: { increment: stockChange },
+                },
+            });
+
             const movement = await tx.inventoryMovement.create({
                 data: {
                     companyId: data.companyId,
@@ -121,31 +120,51 @@ export const InventoryRepository = {
                     type: data.type,
                     quantity: data.quantity,
                     reference: data.reference,
-                    notes: data.notes
-                }
+                    notes: data.notes,
+                },
             });
 
-            return { product, movement };
+            return { product: updatedProduct, movement };
         });
     },
 
-    /**
-     * Get dashboard statistics
-     */
-    async getDashboardStats(companyId: string) {
-        const products = await db.product.findMany({
+    async getRecentMovements(companyId: string, limit = 5) {
+        return db.inventoryMovement.findMany({
             where: { companyId },
-            select: { stock: true, costPrice: true, minStock: true }
+            include: {
+                product: { select: { name: true, sku: true } },
+                user: { select: { username: true } },
+            },
+            orderBy: { createdAt: "desc" },
+            take: limit,
         });
+    },
 
-        const totalProducts = products.length;
-        const totalValue = products.reduce((acc: number, curr: { stock: number; costPrice: number }) => acc + (curr.stock * curr.costPrice), 0);
-        const lowStock = products.filter((p: { stock: number; minStock: number }) => p.stock <= p.minStock).length;
+    async getDashboardStats(companyId: string) {
+        const cutoffDate = new Date(Date.now() - MOVEMENT_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+
+        const [products, movedProductsInWindow] = await Promise.all([
+            db.product.findMany({
+                where: { companyId },
+                select: { id: true, stock: true, costPrice: true, minStock: true },
+            }),
+            db.inventoryMovement.findMany({
+                where: {
+                    companyId,
+                    createdAt: { gte: cutoffDate },
+                },
+                distinct: ["productId"],
+                select: { productId: true },
+            }),
+        ]);
+
+        const movedProductIds = new Set(movedProductsInWindow.map((movement) => movement.productId));
 
         return {
-            totalProducts,
-            totalValue,
-            lowStock
+            totalProducts: products.length,
+            totalValue: products.reduce((acc, curr) => acc + curr.stock * curr.costPrice, 0),
+            lowStock: products.filter((p) => p.stock <= p.minStock).length,
+            inactiveProducts: products.filter((product) => !movedProductIds.has(product.id)).length,
         };
-    }
+    },
 };
