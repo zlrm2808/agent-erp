@@ -3,6 +3,7 @@
 import { loginSchema, type LoginValues } from "./schema";
 import { AuthRepository } from "./repository";
 import { cookies } from "next/headers";
+import { randomUUID } from "node:crypto";
 import { hashPassword, isHashedPassword, verifyPassword } from "./password";
 
 /**
@@ -39,7 +40,7 @@ export async function loginAction(data: LoginValues) {
         }
 
         // 4. Create Session
-        const token = crypto.randomUUID();
+        const token = randomUUID();
         const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
 
         await AuthRepository.invalidateUserSessions(user.id);
