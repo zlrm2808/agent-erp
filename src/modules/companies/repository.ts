@@ -41,6 +41,8 @@ export const CompanyRepository = {
         return Boolean(membership);
     },
 
+
+
     /**
      * Creates a new company and associates it with a user as an admin
      */

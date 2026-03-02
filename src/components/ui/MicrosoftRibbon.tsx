@@ -1,5 +1,12 @@
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
+"use client";
+
+import * as Icons from 'lucide-react';
+
+const IconResolver = ({ name, className }: { name: string, className?: string }) => {
+  const Icon = (Icons as any)[name];
+  if (!Icon) return null;
+  return <Icon className={className} />;
+};
 
 /** 1. Contenedor Principal **/
 export const RibbonContainer = ({ children }: { children: React.ReactNode }) => (
@@ -37,25 +44,26 @@ export const RibbonGroup = ({ label, children }: { label: string, children: Reac
 );
 
 /** 4. Botones: Grande, Pequeño e Icono **/
-export const RibbonBtnLarge = ({ icon: Icon, label, color = "text-slate-600", onClick }: { icon: LucideIcon, label: string, color?: string, onClick?: () => void }) => (
+export const RibbonBtnLarge = ({ icon, label, color = "text-slate-600", onClick }: { icon: string, label: string, color?: string, onClick?: () => void }) => (
   <button onClick={onClick} className="flex flex-col items-center justify-center p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all min-w-16">
-    <Icon className={`w-8 h-8 ${color} stroke-[1.5]`} />
+    <IconResolver name={icon} className={`w-8 h-8 ${color} stroke-[1.5]`} />
     <span className="text-[11px] font-medium mt-1 text-slate-700 dark:text-slate-300">{label}</span>
   </button>
 );
 
-export const RibbonBtnSmall = ({ icon: Icon, label, color = "text-slate-500", onClick }: { icon: LucideIcon, label: string, color?: string, onClick?: () => void }) => (
+export const RibbonBtnSmall = ({ icon, label, color = "text-slate-500", onClick }: { icon: string, label: string, color?: string, onClick?: () => void }) => (
   <button onClick={onClick} className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all w-full text-left">
-    <Icon className={`w-4 h-4 ${color} stroke-2`} />
+    <IconResolver name={icon} className={`w-4 h-4 ${color} stroke-2`} />
     <span className="text-[12px] text-slate-700 dark:text-slate-300 whitespace-nowrap">{label}</span>
   </button>
 );
 
-export const RibbonBtnIcon = ({ icon: Icon, onClick }: { icon: LucideIcon, onClick?: () => void }) => (
+export const RibbonBtnIcon = ({ icon, onClick }: { icon: string, onClick?: () => void }) => (
   <button onClick={onClick} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center">
-    <Icon className="w-4 h-4 text-slate-600 stroke-[2.5]" />
+    <IconResolver name={icon} className="w-4 h-4 text-slate-600 stroke-[2.5]" />
   </button>
 );
+
 
 /** 5. Form Elements **/
 export const RibbonCheck = ({ label }: any) => (

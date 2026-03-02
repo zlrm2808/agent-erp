@@ -4,9 +4,15 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { CompanyRepository } from "./repository";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { bootstrapTenantDatabase } from "./tenant-bootstrap";
+import { bootstrapTenantDatabase, seedTenantDatabase } from "./tenant-bootstrap";
 
-export async function createCompanyAction(formData: { name: string; rif: string; address: string; phone?: string }) {
+export async function createCompanyAction(formData: {
+    name: string;
+    rif: string;
+    address: string;
+    phone?: string;
+    branches?: { name: string; address?: string }[];
+}) {
     const user = await getCurrentUser();
 
     if (!user) {
@@ -18,9 +24,9 @@ export async function createCompanyAction(formData: { name: string; rif: string;
         const dbName = `tenant_${tenantSlug}.db`;
         const databaseUrl = `file:./${dbName}`;
 
-        bootstrapTenantDatabase(databaseUrl);
+        await bootstrapTenantDatabase(databaseUrl);
 
-        await CompanyRepository.create(
+        const company = await CompanyRepository.create(
             {
                 name: formData.name,
                 rif: formData.rif,
@@ -31,13 +37,18 @@ export async function createCompanyAction(formData: { name: string; rif: string;
             user.id,
         );
 
-        revalidatePath("/dashboard/companies");
+        // Seed default organization and finance data with custom branches
+        await seedTenantDatabase(company.id, formData.branches);
+
+        revalidatePath("/select-company");
+
         return { success: true };
     } catch (err) {
         console.error("Error creating company:", err);
         return { error: "No se pudo crear la empresa. Verifica que el RIF no esté duplicado." };
     }
 }
+
 
 export async function getCompaniesAction() {
     const user = await getCurrentUser();

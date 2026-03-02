@@ -7,11 +7,15 @@ import Link from "next/link";
 
 export default async function ProductsPage({
     params,
+    searchParams,
 }: {
-    params: Promise<{ companyId: string }>
+    params: Promise<{ companyId: string }>;
+    searchParams: Promise<{ branchId?: string }>;
 }) {
     const { companyId } = await params;
-    const products = await InventoryRepository.getProducts(companyId);
+    const { branchId } = await searchParams;
+    const products = await InventoryRepository.getProducts(companyId, branchId);
+
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">

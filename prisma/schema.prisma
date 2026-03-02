@@ -35,7 +35,6 @@ model User {
   updatedAt         DateTime            @updatedAt
   companies         UserCompany[]
   sessions          Session[]
-  InventoryMovement InventoryMovement[]
 }
 
 // Pivot table for Multi-company access
@@ -58,48 +57,3 @@ model Session {
   createdAt DateTime @default(now())
 }
 
-// Inventory Module
-model ProductCategory {
-  id          String    @id @default(cuid())
-  companyId   String
-  name        String
-  description String?
-  products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@unique([companyId, name])
-}
-
-model Product {
-  id          String              @id @default(cuid())
-  companyId   String
-  categoryId  String?
-  sku         String
-  name        String
-  description String?
-  costPrice   Float               @default(0)
-  salePrice   Float               @default(0)
-  stock       Int                 @default(0)
-  minStock    Int                 @default(5)
-  category    ProductCategory?    @relation(fields: [categoryId], references: [id])
-  movements   InventoryMovement[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-
-  @@unique([companyId, sku])
-}
-
-model InventoryMovement {
-  id        String   @id @default(cuid())
-  companyId String
-  productId String
-  type      String // IN, OUT, ADJUSTMENT
-  quantity  Int
-  reference String? // Order ID, Adjustment Reason
-  notes     String?
-  userId    String
-  product   Product  @relation(fields: [productId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-}

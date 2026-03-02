@@ -14,7 +14,8 @@ const productSchema = z.object({
     salePrice: z.coerce.number().min(0, "El precio de venta debe ser mayor o igual a 0"),
     stock: z.coerce.number().int().min(0, "El stock inicial debe ser mayor o igual a 0"),
     minStock: z.coerce.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0"),
-    categoryId: z.string().optional(),
+    branchId: z.string().optional().nullable(),
+    accountingGroupId: z.string().optional().nullable(),
 });
 
 export async function createProductAction(companyId: string, formData: FormData) {
@@ -32,12 +33,14 @@ export async function createProductAction(companyId: string, formData: FormData)
         salePrice: formData.get("salePrice"),
         stock: formData.get("stock"),
         minStock: formData.get("minStock"),
-        categoryId: formData.get("categoryId"),
+        branchId: formData.get("branchId") || null,
+        accountingGroupId: formData.get("accountingGroupId") || null,
     };
 
     const validatedFields = productSchema.safeParse(rawData);
 
     if (!validatedFields.success) {
+        console.error("Validation error:", validatedFields.error.flatten());
         return { error: "Datos inválidos. Por favor revisa el formulario." };
     }
 
@@ -67,7 +70,8 @@ export async function updateProductAction(companyId: string, productId: string, 
         salePrice: formData.get("salePrice"),
         stock: formData.get("stock"),
         minStock: formData.get("minStock"),
-        categoryId: formData.get("categoryId"),
+        branchId: formData.get("branchId") || null,
+        accountingGroupId: formData.get("accountingGroupId") || null,
     };
 
     const validatedFields = productSchema.safeParse(rawData);
@@ -77,7 +81,6 @@ export async function updateProductAction(companyId: string, productId: string, 
     }
 
     try {
-        // Need to add updateProduct to repository
         await InventoryRepository.updateProduct(companyId, productId, validatedFields.data);
     } catch (error) {
         console.error("Error updating product:", error);
@@ -119,8 +122,7 @@ export async function recordMovementAction(companyId: string, formData: FormData
     }
 
     try {
-        await InventoryRepository.recordMovement({
-            companyId,
+        await InventoryRepository.recordMovement(companyId, {
             userId: user.id,
             ...validatedFields.data,
         });
@@ -133,3 +135,4 @@ export async function recordMovementAction(companyId: string, formData: FormData
     revalidatePath(`/dashboard/${companyId}/inventory/products`);
     redirect(`/dashboard/${companyId}/inventory`);
 }
+

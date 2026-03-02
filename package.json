@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate": "prisma migrate dev"
+    "migrate": "prisma migrate dev",
+    "docs": "npx tsx scripts/generate-dev-guide.ts"
   },
   "dependencies": {
     "@floating-ui/react-dom": "^2.1.7",
@@ -25,8 +26,10 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "idb": "^8.0.3",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "nuqs": "^2.8.9",
     "prisma": "5.22.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",

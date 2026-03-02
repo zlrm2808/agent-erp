@@ -11,6 +11,7 @@ import { createProductAction, updateProductAction } from "@/modules/inventory/ac
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useBranch } from "@/components/providers/branch-provider";
 
 const productSchema = z.object({
     sku: z.string().min(1, "El SKU es requerido"),
@@ -42,6 +43,8 @@ export function ProductForm({ companyId, initialData }: ProductFormProps) {
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+
+    const { selectedBranchId } = useBranch();
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema),
@@ -76,7 +79,12 @@ export function ProductForm({ companyId, initialData }: ProductFormProps) {
             formData.append("stock", values.stock.toString());
             formData.append("minStock", values.minStock.toString());
 
+            if (selectedBranchId) {
+                formData.append("branchId", selectedBranchId);
+            }
+
             let result;
+
             if (initialData) {
                 result = await updateProductAction(companyId, initialData.id, formData);
             } else {

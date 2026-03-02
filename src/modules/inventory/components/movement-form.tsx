@@ -15,7 +15,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { recordMovementAction } from "@/modules/inventory/actions";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
 const movementSchema = z.object({
@@ -34,9 +34,30 @@ interface MovementFormProps {
     initialType?: "IN" | "OUT" | "ADJUSTMENT";
 }
 
-export function MovementForm({ companyId, products, initialType }: MovementFormProps) {
+import { OfflineStorage } from "@/lib/offline-db";
+import { useOfflineSync } from "@/components/providers/offline-sync-provider";
+import { toast } from "@/lib/toast";
+
+
+export function MovementForm({ companyId, products: initialProducts, initialType }: MovementFormProps) {
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const { isOnline } = useOfflineSync();
+    const [products, setProducts] = useState(initialProducts);
+
+    useEffect(() => {
+        async function loadCached() {
+            if (!isOnline) {
+                const cached = await OfflineStorage.getCachedProducts();
+                if (cached.length > 0) {
+                    setProducts(cached);
+                }
+            } else {
+                setProducts(initialProducts);
+            }
+        }
+        loadCached();
+    }, [isOnline, initialProducts]);
 
     const form = useForm<MovementFormValues>({
         resolver: zodResolver(movementSchema),
@@ -49,8 +70,32 @@ export function MovementForm({ companyId, products, initialType }: MovementFormP
         },
     });
 
-    function onSubmit(values: MovementFormValues) {
+    async function onSubmit(values: MovementFormValues) {
         setError(null);
+
+        if (!isOnline) {
+            // Save locally if offline
+            const offlineMovement = {
+                localId: crypto.randomUUID(), // Using native crypto.randomUUID()
+                offlineCreatedAt: new Date().toISOString(),
+                ...values
+            };
+
+            try {
+                await OfflineStorage.saveMovement(offlineMovement);
+                toast({
+                    title: "Movimiento guardado localmente",
+                    description: "Se sincronizará automáticamente cuando vuelva el internet.",
+                });
+                form.reset();
+                return;
+            } catch (err) {
+                console.error("Local save failed:", err);
+                setError("Error al guardar localmente.");
+                return;
+            }
+        }
+
         startTransition(async () => {
             const formData = new FormData();
             formData.append("productId", values.productId);
@@ -63,9 +108,12 @@ export function MovementForm({ companyId, products, initialType }: MovementFormP
 
             if (result?.error) {
                 setError(result.error);
+            } else {
+                form.reset();
             }
         });
     }
+
 
     return (
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">

@@ -2,17 +2,23 @@ import { InventoryRepository } from "@/modules/inventory/repository";
 import * as R from "@/components/ui/MicrosoftRibbon";
 import { File, Edit, Trash, ArrowUpFromDot, ArrowDownToDot, List, Package, BoxesIcon } from "lucide-react";
 import { KpiCard } from "@/components/ui/KpiCard";
+import Link from "next/link";
 
 export default async function InventoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ companyId: string }>;
+  searchParams: Promise<{ branchId?: string }>;
 }) {
   const { companyId } = await params;
+  const { branchId } = await searchParams;
+
   const [stats, recentMovements] = await Promise.all([
-    InventoryRepository.getDashboardStats(companyId),
-    InventoryRepository.getRecentMovements(companyId),
+    InventoryRepository.getDashboardStats(companyId, branchId),
+    InventoryRepository.getRecentMovements(companyId, branchId),
   ]);
+
 
   return (
     <div className="space-y-0 mt-12">
@@ -22,21 +28,25 @@ export default async function InventoryPage({
         </R.RibbonMenu>
         <div className="flex h-24 overflow-x-auto no-scrollbar items-stretch">
           <R.RibbonGroup label="Productos">
-            <R.RibbonBtnLarge icon={File} label="Nuevo" />
+            <Link href={`/dashboard/${companyId}/inventory/products/new`}>
+              <R.RibbonBtnLarge icon="File" label="Nuevo" />
+            </Link>
             <div className="flex-col">
-              <R.RibbonBtnSmall icon={Edit} label="Editar" color="text-green-900" />
-              <R.RibbonBtnSmall icon={Trash} label="Eliminar" color="text-red-900" />
+              <R.RibbonBtnSmall icon="Edit" label="Editar" color="text-green-900" />
+              <R.RibbonBtnSmall icon="Trash" label="Eliminar" color="text-red-900" />
             </div>
           </R.RibbonGroup>
           <R.RibbonGroup label="Movimientos">
-            <R.RibbonBtnLarge icon={ArrowDownToDot} label="Entradas" />
-            <R.RibbonBtnLarge icon={ArrowUpFromDot} label="Salidas" />
+            <R.RibbonBtnLarge icon="ArrowDownToDot" label="Entradas" />
+            <R.RibbonBtnLarge icon="ArrowUpFromDot" label="Salidas" />
           </R.RibbonGroup>
           <R.RibbonGroup label="Ver">
-            <R.RibbonBtnLarge icon={List} label="Productos" />
+            <Link href={`/dashboard/${companyId}/inventory/products`}>
+              <R.RibbonBtnLarge icon="List" label="Productos" />
+            </Link>
             <div className="flex-col">
-              <R.RibbonBtnSmall icon={Package} label="Stock" color="text-green-900" />
-              <R.RibbonBtnSmall icon={BoxesIcon} label="Kardex" color="text-blue-700" />
+              <R.RibbonBtnSmall icon="Package" label="Stock" color="text-green-900" />
+              <R.RibbonBtnSmall icon="Boxes" label="Kardex" color="text-blue-700" />
             </div>
           </R.RibbonGroup>
         </div>
@@ -98,7 +108,7 @@ export default async function InventoryPage({
                       <td className="py-2 pr-4">{movement.product.name} ({movement.product.sku})</td>
                       <td className="py-2 pr-4">{movement.type}</td>
                       <td className="py-2 pr-4">{movement.quantity}</td>
-                      <td className="py-2 pr-4">{movement.user.username}</td>
+                      <td className="py-2 pr-4 text-xs font-mono">{movement.userId.slice(0, 8)}</td>
                     </tr>
                   ))}
                 </tbody>

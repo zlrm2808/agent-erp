@@ -31,13 +31,23 @@ interface Product {
     category?: { name: string } | null;
 }
 
+import { useEffect } from "react";
+import { OfflineStorage } from "@/lib/offline-db";
+
 interface ProductListProps {
     products: Product[];
     companyId: string;
 }
 
 export function ProductList({ products, companyId }: ProductListProps) {
+    useEffect(() => {
+        if (products.length > 0) {
+            OfflineStorage.updateProductCache(products);
+        }
+    }, [products]);
+
     if (products.length === 0) {
+
         return (
             <div className="rounded-md border border-dashed border-[#e1dfdd] p-12 text-center bg-[#faf9f8]">
                 <div className="mx-auto h-12 w-12 text-[#a19f9d] mb-4">

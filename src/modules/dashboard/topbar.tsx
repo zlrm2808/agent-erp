@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Bell,
@@ -10,7 +12,41 @@ import {
 import { Input } from "@/components/ui/input";
 import { Breadcrumb } from "@/components/ui/TheBreadcrumb";
 
-export function Topbar() {
+import { useBranch } from "@/components/providers/branch-provider";
+import { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export function Topbar({
+  companyId,
+  companyName = "Agent ERP",
+  initialBranches = []
+}: {
+  companyId: string,
+  companyName?: string,
+  initialBranches?: { id: string, name: string }[]
+}) {
+  const { selectedBranchId, setSelectedBranchId } = useBranch();
+  const branches = initialBranches;
+
+
+  const selectedBranch = branches.find(b => b.id === selectedBranchId) || branches[0];
+
+  // Initialize selected branch if none selected
+  useEffect(() => {
+    if (!selectedBranchId && branches.length > 0) {
+      setSelectedBranchId(branches[0].id);
+    }
+  }, [branches, selectedBranchId, setSelectedBranchId]);
+
   return (
     <header className="h-12 bg-[#001d3d] text-white flex items-center justify-between px-2 fixed top-0 left-0 right-0 z-50 shadow-sm">
       {/* Left: Brand & Business Unit */}
@@ -24,22 +60,49 @@ export function Topbar() {
             <Menu className="w-5 h-5" />
           </Button>
 
-          {/* Nombre de Empresa y Sucursal */}
+          {/* Nombre de Empresa y Sucursal Seleccionable */}
           <div className="flex items-center space-x-2">
             <span className="font-semibold text-sm tracking-wide">
-              Avícola la Providencia
+              {companyName}
             </span>
             <span className="text-white/40 font-light">|</span>
-            <span className="text-sm font-light text-gray-200">
-              Planta Beneficio
-            </span>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-sm font-light text-gray-200 hover:bg-white/10 hover:text-white flex items-center gap-1"
+                >
+                  {selectedBranch?.name || "Cargando..."}
+                  <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-white border-slate-200 shadow-xl" align="start">
+                <DropdownMenuLabel className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
+                  Cambiar Sucursal
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-100" />
+                {branches.map((branch) => (
+                  <DropdownMenuItem
+                    key={branch.id}
+                    onClick={() => setSelectedBranchId(branch.id)}
+                    className={cn(
+                      "flex items-center justify-between cursor-pointer",
+                      selectedBranchId === branch.id && "bg-slate-100 font-medium"
+                    )}
+                  >
+                    {branch.name}
+                    {selectedBranchId === branch.id && <Check className="h-4 w-4 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <Breadcrumb />
         </div>
 
-        {/* Breadcrumb optimizado para navegación interna opcional */}
-        <div className="hidden lg:flex items-center ml-8 text-sm">
-        </div>
+        {/* ... rest of your left side ... */}
       </div>
 
       {/* Center: Search Bar */}

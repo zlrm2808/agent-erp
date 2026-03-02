@@ -6,15 +6,18 @@ import { InventoryRepository } from "@/modules/inventory/repository";
 
 export default async function OverviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ companyId: string }>;
+  searchParams: Promise<{ branchId?: string }>;
 }) {
   const { companyId } = await params;
+  const { branchId } = await searchParams;
 
   const [company, stats, recentMovements] = await Promise.all([
     CompanyRepository.findById(companyId),
-    InventoryRepository.getDashboardStats(companyId),
-    InventoryRepository.getRecentMovements(companyId, 8),
+    InventoryRepository.getDashboardStats(companyId, branchId),
+    InventoryRepository.getRecentMovements(companyId, branchId, 8),
   ]);
 
   return (
