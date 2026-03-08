@@ -42,26 +42,27 @@ export async function bootstrapTenantDatabase(databaseUrl: string) {
 /**
  * Seeds the tenant database with initial default data
  */
-export async function seedTenantDatabase(companyId: string, customBranches?: { name: string; address?: string }[]) {
+export async function seedTenantDatabase(companyId: string, customBranches?: { name: string; legalName?: string; rif?: string; address?: string }[]) {
     const tenantDb = await getTenantDb(companyId);
 
     // 1. Create Branches
     const branchesToCreate = customBranches && customBranches.length > 0
         ? customBranches
-        : [{ name: "Sede Principal", address: "" }];
+        : [{ name: "Sede Principal", legalName: null, rif: null, address: "" }];
 
     const createdBranches = [];
     for (const b of branchesToCreate) {
         const branch = await tenantDb.branch.create({
             data: {
                 name: b.name,
-                address: b.address,
+                legalName: b.legalName || null,
+                rif: b.rif || null,
+                address: b.address || null,
                 isActive: true,
             },
         });
         createdBranches.push(branch);
     }
-
 
     // 2. Create Base Currencies
     const ves = await tenantDb.currency.upsert({
@@ -86,24 +87,38 @@ export async function seedTenantDatabase(companyId: string, customBranches?: { n
         },
     });
 
-    // 3. Set Base Currency and Reset Fiscal sequences
+    // 3. Seed Digital Printer (Art 7 SENIAT)
+    const printer = await tenantDb.digitalPrinter.upsert({
+        where: { rif: "J-00000000-0" },
+        update: {},
+        create: {
+            name: "ADMINISTRADORA DE SERVICIOS DIGITALES SEGUROS, C.A.",
+            rif: "J-00000000-0",
+            authNumber: "SNAT/2024/000102",
+            authDate: new Date("2024-10-31"),
+        }
+    });
+
+    // 4. Set Fiscal Settings
     await tenantDb.fiscalSetting.upsert({
         where: { id: "global-settings" },
         update: {
             baseCurrencyId: ves.id,
-            invoiceNumberSeq: 1, // Reset sequences if needed, or keep previous
-            controlNumberSeq: 1
+            digitalPrinterId: printer.id,
+            currentInvoiceSeq: 1,
+            currentControlSeq: 1
         },
         create: {
             id: "global-settings",
             baseCurrencyId: ves.id,
-            invoiceNumberSeq: 1,
-            controlNumberSeq: 1
+            digitalPrinterId: printer.id,
+            currentInvoiceSeq: 1,
+            currentControlSeq: 1,
+            controlNumberRange: "00-00000001 al 00-99999999"
         },
     });
 
-
-    // 4. Create Basic Accounting Groups
+    // 5. Create Basic Accounting Groups
     const accountingGroups = [
         { code: "1", name: "Activos", type: "Asset" },
         { code: "2", name: "Pasivos", type: "Liability" },
@@ -122,4 +137,3 @@ export async function seedTenantDatabase(companyId: string, customBranches?: { n
 
     return { createdBranches, ves, usd };
 }
-

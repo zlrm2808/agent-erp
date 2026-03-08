@@ -6,6 +6,23 @@ const prisma = new PrismaClient();
 async function main() {
   const adminPasswordHash = await hashPassword("password123");
 
+  // Create Default Profiles
+  const profiles = [
+    { name: "Administrador", description: "Acceso total a todas las funciones del sistema" },
+    { name: "Desarrollador", description: "Acceso a funciones técnicas y personalización" },
+    { name: "Operador", description: "Acceso limitado a operaciones diarias" },
+  ];
+
+  for (const p of profiles) {
+    await prisma.profile.upsert({
+      where: { name: p.name },
+      update: {},
+      create: p,
+    });
+  }
+
+  const adminProfile = await prisma.profile.findUnique({ where: { name: "Administrador" } });
+
   const admin = await prisma.user.upsert({
     where: { username: "admin" },
     update: {
@@ -26,6 +43,11 @@ async function main() {
             },
           },
           role: "admin",
+          ...(adminProfile ? {
+            profile: {
+              connect: { id: adminProfile.id }
+            }
+          } : {})
         },
       },
     },

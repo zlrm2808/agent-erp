@@ -11,7 +11,8 @@ export async function createCompanyAction(formData: {
     rif: string;
     address: string;
     phone?: string;
-    branches?: { name: string; address?: string }[];
+    branches?: { name: string; legalName?: string; rif?: string; address?: string }[];
+
 }) {
     const user = await getCurrentUser();
 

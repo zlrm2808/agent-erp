@@ -1,6 +1,3 @@
-// Tenant Schema - This will be used to generate the Prisma Client for EACH company database
-// Each time a company is created, we apply this schema to its private database.
-
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/@prisma/client/tenant"
@@ -11,22 +8,37 @@ datasource db {
   url      = env("TENANT_DATABASE_URL")
 }
 
-// Configuration & Compliance
+// Configuration & Compliance (Art 7, 29, 31)
 model FiscalSetting {
-  id                String   @id @default(cuid())
-  controlNumberSeq  Int      @default(1)    // Sequence for "Número de Control" (PROV/0102)
-  invoiceNumberSeq  Int      @default(1)    // Sequence for "Factura"
-  taxRate           Float    @default(16.0) // Default IVA 16%
-  isDigitalInvoice  Boolean  @default(true)
-  baseCurrencyId    String?  // Reference to the base currency (e.g., VEF or USD)
+  id                String   @id @default("global-settings")
+  digitalPrinterId  String?
+  controlNumberRange String?  // e.g. "00-000001 al 00-010000" (Art 7.5)
+  currentInvoiceSeq Int      @default(1)
+  currentControlSeq Int      @default(1)
+  taxRate           Float    @default(16.0) 
+  baseCurrencyId    String?  
   updatedAt         DateTime @updatedAt
+  
+  digitalPrinter    DigitalPrinter? @relation(fields: [digitalPrinterId], references: [id])
+}
+
+model DigitalPrinter {
+  id                String   @id @default(cuid())
+  name              String   // Razón Social Imprenta Digital
+  rif               String   @unique
+  authNumber        String   // Número de Providencia de autorización
+  authDate          DateTime // Fecha de la Providencia
+  isActive          Boolean  @default(true)
+  settings          FiscalSetting[]
 }
 
 // Organization & Structure
 model Branch {
   id            String   @id @default(cuid())
   name          String
-  address       String?
+  legalName     String?  // Razón Social (Optional if different)
+  rif           String?  // RIF (Optional if different)
+  address       String?  
   phone         String?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -42,7 +54,7 @@ model Terminal {
   branchId    String
   code        String   // e.g., "CAJA-01"
   name        String
-  prefix      String   // For offline sequencing (e.g., "01-")
+  prefix      String   // For offline sequencing (Art 13)
   lastInvoice Int      @default(0)
   isActive    Boolean  @default(true)
   branch      Branch   @relation(fields: [branchId], references: [id])
@@ -58,13 +70,12 @@ model BusinessUnit {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   branch      Branch   @relation(fields: [branchId], references: [id])
-  invoices    Invoice[]
 }
 
 // Finance & Currency
 model Currency {
   id          String   @id @default(cuid())
-  code        String   @unique // USD, VEF, EUR
+  code        String   @unique // USD, VES, EUR
   name        String
   symbol      String
   isBase      Boolean  @default(false)
@@ -78,7 +89,7 @@ model Currency {
 model ExchangeRate {
   id          String   @id @default(cuid())
   currencyId  String
-  rate        Float    // Rate relative to base currency
+  rate        Float    
   effectiveAt DateTime @default(now())
   createdAt   DateTime @default(now())
   currency    Currency @relation(fields: [currencyId], references: [id])
@@ -89,11 +100,24 @@ model AccountingGroup {
   code        String   @unique
   name        String
   description String?
-  type        String   // Asset, Liability, Equity, Revenue, Expense
+  type        String   
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   products    Product[]
+}
+
+// Customers (Art 35)
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  rif         String   @unique
+  address     String?
+  email       String?
+  phone       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  invoices    Invoice[]
 }
 
 // Inventory Module
@@ -106,7 +130,7 @@ model Product {
   salePrice         Float    @default(0)
   stock             Int      @default(0)
   minStock          Int      @default(5)
-  isExempt          Boolean  @default(false) // (E) in invoices for exempt items
+  isExempt          Boolean  @default(false) // Art 7.8 (E)
   branchId          String?
   accountingGroupId String?
   createdAt         DateTime @default(now())
@@ -114,25 +138,49 @@ model Product {
   branch            Branch?  @relation(fields: [branchId], references: [id])
   accountingGroup   AccountingGroup? @relation(fields: [accountingGroupId], references: [id])
   movements         InventoryMovement[]
+  invoiceItems      InvoiceItem[]
 }
 
+model InventoryMovement {
+  id              String   @id @default(cuid())
+  productId       String
+  type            String   // IN, OUT, ADJUSTMENT
+  quantity        Int
+  reference       String?
+  notes           String?
+  userId          String?
+  createdAt       DateTime @default(now())
+  product         Product  @relation(fields: [productId], references: [id])
+}
+
+// Invoicing (Salida de Documentos Fiscales)
 model Invoice {
   id              String   @id @default(cuid())
+  type            String   @default("FACTURA") // Art 2
   terminalId      String?
   branchId        String?
-  businessUnitId  String?
+  customerId      String?
   
-  // Sequential IDs
-  invoiceNumber   String?  @unique // Nullable for offline drafts until synced
+  // Sequential & Fiscal IDs (Art 7)
+  invoiceNumber   String?  @unique 
   controlNumber   String?  @unique 
+  series          String?  // Art 13
   
-  // Offline Sync Management
-  localId         String?  @unique // The UUID generated by the client
+  // Printer Data Snapshot (Art 7.14)
+  printerRif      String?  
+  printerAuth     String?
+  printerAuthDate DateTime?
+  controlAssignedAt DateTime? @default(now())
+  
+  // Sync Management
+  localId         String?  @unique 
   isOffline       Boolean  @default(false)
   isSynced        Boolean  @default(true)
   offlineCreatedAt DateTime?
   
-  date            DateTime @default(now())
+  date            DateTime @default(now()) // Art 7.6 (Fecha y Hora)
+  
+  // Customer Data Snapshot (Art 7.7)
   customerName    String
   customerRif     String
   customerAddress String?
@@ -141,56 +189,147 @@ model Invoice {
   exchangeRate    Float    @default(1.0)
   baseAmount      Float
   taxAmount       Float
+  igtfAmount      Float    @default(0.0) // Art 32.2 opt
   totalAmount     Float
-  status          String   @default("issued") // issued, cancelled, DRAFT_OFFLINE, synced
+  status          String   @default("issued") // issued, cancelled
   
   items           InvoiceItem[]
   auditLog        InvoiceAudit[]
   
   branch          Branch?  @relation(fields: [branchId], references: [id])
-  businessUnit    BusinessUnit? @relation(fields: [businessUnitId], references: [id])
+  customer        Customer? @relation(fields: [customerId], references: [id])
   currency        Currency? @relation(fields: [currencyId], references: [id])
   terminal        Terminal? @relation(fields: [terminalId], references: [id])
 }
 
-model InventoryMovement {
-  id              String   @id @default(cuid())
-  productId       String
-  type            String   // IN, OUT, ADJUSTMENT
-  quantity        Int
-  reference       String?  
-  notes           String?
-  userId          String
-  
-  // Offline support
-  localId         String?  @unique
-  isOffline       Boolean  @default(false)
-  isSynced        Boolean  @default(true)
-  
-  product         Product  @relation(fields: [productId], references: [id])
-  createdAt       DateTime @default(now())
-}
-
-
 model InvoiceItem {
   id          String   @id @default(cuid())
   invoiceId   String
-  productId   String
-  productName String
+  productId   String?
+  sku         String
+  description String
   quantity    Int
-  unitPrice   Float
-  taxRate     Float
+  price       Float
+  isExempt    Boolean  @default(false) // Art 7.8
+  taxRate     Float    @default(16.0)
   total       Float
+  
   invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  product     Product? @relation(fields: [productId], references: [id])
 }
 
 model InvoiceAudit {
   id          String   @id @default(cuid())
   invoiceId   String
-  action      String   // created, printed, cancelled
-  reason      String?
-  timestamp   DateTime @default(now())
-  userId      String   // ID of the user who performed the action
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  action      String   // created, cancelled, synced
+  userId      String?
+  createdAt   DateTime @default(now())
+  notes       String?
+  
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+}
+// --- Payroll Module (LOTTT Venezuela) ---
+
+model Employee {
+  id              String   @id @default(cuid())
+  firstName       String
+  lastName        String
+  nationality     String   @default("V") // V, E, P
+  idNumber        String   @unique // Cédula
+  rif             String?  @unique
+  birthDate       DateTime?
+  gender          String?  // M, F
+  email           String?
+  phone           String?
+  address         String?
+  
+  // Job Info
+  position        String?
+  department      String?
+  hireDate        DateTime
+  terminationDate DateTime?
+  isActive        Boolean  @default(true)
+  
+  // Salary Info
+  salaryType      String   @default("MONTHLY") // MONTHLY, DAILY
+  baseSalary      Float    @default(0) // Sueldo base
+  
+  // Bank Info
+  bankName        String?
+  accountNumber   String?
+  accountType     String?  // Savings, Checking
+  
+  payrollDetails  PayrollDetail[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
+model Payroll {
+  id              String   @id @default(cuid())
+  type            String   @default("QUINCENAL") // QUINCENAL, MENSUAL, ESPECIAL
+  period          String   // e.g., "2024-03-01 al 2024-03-15"
+  startDate       DateTime
+  endDate         DateTime
+  status          String   @default("DRAFT") // DRAFT, PROCESSED, CLOSED, CANCELLED
+  totalEarnings   Float    @default(0)
+  totalDeductions Float    @default(0)
+  totalNet        Float    @default(0)
+  
+  details         PayrollDetail[]
+  createdAt       DateTime @default(now())
+}
+
+model PayrollDetail {
+  id              String   @id @default(cuid())
+  payrollId       String
+  employeeId      String
+  
+  // Snapshots at time of processing
+  employeeName    String
+  employeeIdNumber String
+  baseSalary      Float
+  
+  totalEarnings   Float    @default(0)
+  totalDeductions Float    @default(0)
+  totalNet        Float    @default(0)
+  
+  items           PayrollItem[]
+  
+  payroll         Payroll  @relation(fields: [payrollId], references: [id])
+  employee        Employee @relation(fields: [employeeId], references: [id])
+}
+
+model PayrollItem {
+  id              String   @id @default(cuid())
+  payrollDetailId String
+  conceptId       String?
+  code            String   // e.g., 001, 501
+  name            String   // Sueldo, IVSS, LPH
+  type            String   // EARNING, DEDUCTION
+  amount          Float
+  
+  payrollDetail   PayrollDetail @relation(fields: [payrollDetailId], references: [id])
+}
+
+model PayrollConcept {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  type            String   // EARNING, DEDUCTION
+  category        String   // FIXED, FORMULA, MANUAL
+  formula         String?  // e.g., "salary / 30 * days"
+  isActive        Boolean  @default(true)
+  isStatutory     Boolean  @default(false) // IVSS, LPH, etc.
+}
+
+model PayrollParameter {
+  id              String   @id @default("payroll-params")
+  minWage         Float    @default(130) // Sueldo Mínimo
+  mealTicket      Float    @default(0)   // Cestaticket
+  taxUnit         Float    @default(9)   // Unidad Tributaria
+  ivssRate        Float    @default(0.04)
+  faovRate        Float    @default(0.01)
+  lpeRate         Float    @default(0.005)
+  maxIvssSalary   Float    @default(5)   // Max 5 salaries for IVSS cap
+  updatedAt       DateTime @updatedAt
+}

@@ -2,6 +2,7 @@ import { InventoryRepository } from "@/modules/inventory/repository";
 import * as R from "@/components/ui/MicrosoftRibbon";
 import { File, Edit, Trash, ArrowUpFromDot, ArrowDownToDot, List, Package, BoxesIcon } from "lucide-react";
 import { KpiCard } from "@/components/ui/KpiCard";
+import { InventoryChart } from "@/modules/inventory/components/inventory-chart";
 import Link from "next/link";
 
 export default async function InventoryPage({
@@ -21,16 +22,11 @@ export default async function InventoryPage({
 
 
   return (
-    <div className="space-y-0 mt-12">
+    <div className="space-y-0">
       <R.RibbonContainer>
-        <R.RibbonMenu>
-          <R.RibbonTab label="Home" />
-        </R.RibbonMenu>
-        <div className="flex h-24 overflow-x-auto no-scrollbar items-stretch">
+        <div className="flex h-28 overflow-x-auto no-scrollbar items-stretch bg-white">
           <R.RibbonGroup label="Productos">
-            <Link href={`/dashboard/${companyId}/inventory/products/new`}>
-              <R.RibbonBtnLarge icon="File" label="Nuevo" />
-            </Link>
+            <R.RibbonBtnLarge icon="File" label="Nuevo" href={`/dashboard/${companyId}/inventory/products/new`} />
             <div className="flex-col">
               <R.RibbonBtnSmall icon="Edit" label="Editar" color="text-green-900" />
               <R.RibbonBtnSmall icon="Trash" label="Eliminar" color="text-red-900" />
@@ -41,9 +37,7 @@ export default async function InventoryPage({
             <R.RibbonBtnLarge icon="ArrowUpFromDot" label="Salidas" />
           </R.RibbonGroup>
           <R.RibbonGroup label="Ver">
-            <Link href={`/dashboard/${companyId}/inventory/products`}>
-              <R.RibbonBtnLarge icon="List" label="Productos" />
-            </Link>
+            <R.RibbonBtnLarge icon="List" label="Productos" href={`/dashboard/${companyId}/inventory/products`} />
             <div className="flex-col">
               <R.RibbonBtnSmall icon="Package" label="Stock" color="text-green-900" />
               <R.RibbonBtnSmall icon="Boxes" label="Kardex" color="text-blue-700" />
@@ -53,32 +47,40 @@ export default async function InventoryPage({
       </R.RibbonContainer>
 
       <div className="py-3 space-y-3">
-        <div className="flex justify-between gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
           <KpiCard
             titulo="Total de Productos"
             contenido={stats.totalProducts.toString()}
-            descripcion="Items registrados en el sistema"
+            descripcion="Items registrados"
             color="#0078d4"
           />
           <KpiCard
-            titulo="Valor Total de Inventario"
-            contenido={`$${stats.totalValue.toLocaleString("es-VE", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`}
-            descripcion="Costo total del inventario actual"
+            titulo="Costo de Inventario"
+            contenido={`$${stats.totalCost.toLocaleString("es-VE", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`}
+            descripcion="Costo total de compra"
+            color="orange"
+          />
+          <KpiCard
+            titulo="Valor Total (Venta)"
+            contenido={`$${stats.totalSaleValue.toLocaleString("es-VE", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`}
+            descripcion="Valor proyectado de venta"
             color="green"
           />
           <KpiCard
             titulo="Alerta de Stock"
             contenido={stats.lowStock.toString()}
-            descripcion="Items por debajo del stock mínimo"
+            descripcion="Por debajo del stock mínimo"
             color="red"
           />
           <KpiCard
-            titulo="Items sin movimientos"
+            titulo="Sin Movimientos"
             contenido={stats.inactiveProducts.toString()}
-            descripcion="Items inactivos en los últimos 60 días"
-            color="orange"
+            descripcion="Inactivos (> 60 días)"
+            color="gray"
           />
         </div>
+
+        <InventoryChart data={stats.topProducts} />
 
         <div className="rounded-lg border border-[#e1dfdd] bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -108,7 +110,7 @@ export default async function InventoryPage({
                       <td className="py-2 pr-4">{movement.product.name} ({movement.product.sku})</td>
                       <td className="py-2 pr-4">{movement.type}</td>
                       <td className="py-2 pr-4">{movement.quantity}</td>
-                      <td className="py-2 pr-4 text-xs font-mono">{movement.userId.slice(0, 8)}</td>
+                      <td className="py-2 pr-4 text-xs font-mono">{movement.userId?.slice(0, 8) || "SISTEMA"}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -9,6 +9,8 @@
 - [Módulo FINANCE](#-módulo-finance)
 - [Módulo INVENTORY](#-módulo-inventory)
 - [Módulo ORGANIZATION](#-módulo-organization)
+- [Módulo PAYROLL](#-módulo-payroll)
+- [Módulo SALES](#-módulo-sales)
 - [Módulo SYNC](#-módulo-sync)
 - [Capa de Datos y DB](#-capa-de-datos-y-base-de-datos)
 - [Análisis de IA](#-análisis-de-ia-redundancias-y-optimizaciones)
@@ -41,16 +43,16 @@
 
 ### 📄 actions.ts (`src\modules\companies\actions.ts`)
 - **[createCompanyAction](src\modules\companies\actions.ts#L7)**: Sin descripción detallada.
-- **[getCompaniesAction](src\modules\companies\actions.ts#L50)**: Sin descripción detallada.
-- **[selectCompanyAction](src\modules\companies\actions.ts#L66)**: Sin descripción detallada.
+- **[getCompaniesAction](src\modules\companies\actions.ts#L51)**: Sin descripción detallada.
+- **[selectCompanyAction](src\modules\companies\actions.ts#L67)**: Sin descripción detallada.
 
 ### 📄 add-company-card.tsx (`src\modules\companies\add-company-card.tsx`)
 - **[AddCompanyCard](src\modules\companies\add-company-card.tsx#L14)**: Sin descripción detallada.
 
 ### 📄 create-company-form.tsx (`src\modules\companies\create-company-form.tsx`)
-- **[CreateCompanyForm](src\modules\companies\create-company-form.tsx#L24)**: Sin descripción detallada.
-- **[onSuccess](src\modules\companies\create-company-form.tsx#L26)**: Sin descripción detallada.
-- **[onSubmit](src\modules\companies\create-company-form.tsx#L46)**: Sin descripción detallada.
+- **[CreateCompanyForm](src\modules\companies\create-company-form.tsx#L26)**: Sin descripción detallada.
+- **[onSuccess](src\modules\companies\create-company-form.tsx#L28)**: Sin descripción detallada.
+- **[onSubmit](src\modules\companies\create-company-form.tsx#L49)**: Sin descripción detallada.
 
 ### 📄 tenant-bootstrap.ts (`src\modules\companies\tenant-bootstrap.ts`)
 - **[bootstrapTenantDatabase](src\modules\companies\tenant-bootstrap.ts#L8)**: Sin descripción detallada.
@@ -60,7 +62,7 @@
 
 ## 📦 Módulo: DASHBOARD
 ### 📄 sidebar.tsx (`src\modules\dashboard\sidebar.tsx`)
-- **[Sidebar](src\modules\dashboard\sidebar.tsx#L60)**: Sin descripción detallada.
+- **[Sidebar](src\modules\dashboard\sidebar.tsx#L50)**: Sin descripción detallada.
 
 ### 📄 stats-card.tsx (`src\modules\dashboard\stats-card.tsx`)
 - **[StatsCard](src\modules\dashboard\stats-card.tsx#L15)**: Sin descripción detallada.
@@ -75,9 +77,9 @@
 
 ## 📦 Módulo: INVENTORY
 ### 📄 actions.ts (`src\modules\inventory\actions.ts`)
-- **[createProductAction](src\modules\inventory\actions.ts#L19)**: Sin descripción detallada.
-- **[updateProductAction](src\modules\inventory\actions.ts#L56)**: Sin descripción detallada.
-- **[recordMovementAction](src\modules\inventory\actions.ts#L100)**: Sin descripción detallada.
+- **[createProductAction](src\modules\inventory\actions.ts#L20)**: Sin descripción detallada.
+- **[updateProductAction](src\modules\inventory\actions.ts#L58)**: Sin descripción detallada.
+- **[recordMovementAction](src\modules\inventory\actions.ts#L103)**: Sin descripción detallada.
 
 ### 📄 inventory-stats.tsx (`src\modules\inventory\components\inventory-stats.tsx`)
 - **[InventoryStats](src\modules\inventory\components\inventory-stats.tsx#L11)**: Sin descripción detallada.
@@ -88,8 +90,8 @@
 - **[onSubmit](src\modules\inventory\components\movement-form.tsx#L73)**: Sin descripción detallada.
 
 ### 📄 product-form.tsx (`src\modules\inventory\components\product-form.tsx`)
-- **[ProductForm](src\modules\inventory\components\product-form.tsx#L40)**: Sin descripción detallada.
-- **[onSubmit](src\modules\inventory\components\product-form.tsx#L68)**: Sin descripción detallada.
+- **[ProductForm](src\modules\inventory\components\product-form.tsx#L43)**: Sin descripción detallada.
+- **[onSubmit](src\modules\inventory\components\product-form.tsx#L73)**: Sin descripción detallada.
 
 ### 📄 product-list.tsx (`src\modules\inventory\components\product-list.tsx`)
 - **[ProductList](src\modules\inventory\components\product-list.tsx#L40)**: Sin descripción detallada.
@@ -97,6 +99,48 @@
 ---
 
 ## 📦 Módulo: ORGANIZATION
+---
+
+## 📦 Módulo: PAYROLL
+### 📄 actions.ts (`src\modules\payroll\actions.ts`)
+- **[createEmployeeAction](src\modules\payroll\actions.ts#L20)**: Sin descripción detallada.
+- **[generatePayrollAction](src\modules\payroll\actions.ts#L45)**: Sin descripción detallada.
+- **[updatePayrollParamsAction](src\modules\payroll\actions.ts#L64)**: Sin descripción detallada.
+- **[getPayrollHistoryAction](src\modules\payroll\actions.ts#L88)**: Sin descripción detallada.
+- **[getBankFileAction](src\modules\payroll\actions.ts#L97)**: Sin descripción detallada.
+- **[getEmployerReportAction](src\modules\payroll\actions.ts#L107)**: Sin descripción detallada.
+
+### 📄 employee-manager.tsx (`src\modules\payroll\components\employee-manager.tsx`)
+- **[EmployeeManager](src\modules\payroll\components\employee-manager.tsx#L26)**: Sin descripción detallada.
+
+### 📄 payroll-dashboard-client.tsx (`src\modules\payroll\components\payroll-dashboard-client.tsx`)
+- **[PayrollDashboardClient](src\modules\payroll\components\payroll-dashboard-client.tsx#L29)**: Sin descripción detallada.
+
+### 📄 payroll-generator.tsx (`src\modules\payroll\components\payroll-generator.tsx`)
+- **[PayrollGenerator](src\modules\payroll\components\payroll-generator.tsx#L18)**: Sin descripción detallada.
+
+### 📄 payroll-history.tsx (`src\modules\payroll\components\payroll-history.tsx`)
+- **[PayrollHistory](src\modules\payroll\components\payroll-history.tsx#L30)**: Sin descripción detallada.
+
+### 📄 payroll-settings.tsx (`src\modules\payroll\components\payroll-settings.tsx`)
+- **[PayrollSettingsForm](src\modules\payroll\components\payroll-settings.tsx#L9)**: Sin descripción detallada.
+
+### 📄 social-benefits.tsx (`src\modules\payroll\components\social-benefits.tsx`)
+- **[SocialBenefitsManager](src\modules\payroll\components\social-benefits.tsx#L21)**: Sin descripción detallada.
+
+---
+
+## 📦 Módulo: SALES
+### 📄 actions.ts (`src\modules\sales\actions.ts`)
+- **[createInvoiceAction](src\modules\sales\actions.ts#L29)**: Sin descripción detallada.
+
+### 📄 billing-form.tsx (`src\modules\sales\components\billing-form.tsx`)
+- **[BillingForm](src\modules\sales\components\billing-form.tsx#L40)**: Sin descripción detallada.
+
+### 📄 invoice-list.tsx (`src\modules\sales\components\invoice-list.tsx`)
+- **[InvoiceList](src\modules\sales\components\invoice-list.tsx#L32)**: Sin descripción detallada.
+- **[cn](src\modules\sales\components\invoice-list.tsx#L119)**: Sin descripción detallada.
+
 ---
 
 ## 📦 Módulo: SYNC
@@ -117,9 +161,11 @@
 ## 🧠 Análisis de IA (Redundancias y Optimizaciones)
 
 ### ✅ Mejoras realizadas recientemente:
-- **Unificación de Sucursales**: El método `getBranches` se centralizó en `OrganizationRepository`, eliminando la redundancia en el módulo de empresas.
-- **Caché de Conexiones**: Se implementó un pool de clientes Prisma con estrategia LRU (Limitado a 50) para optimizar memoria y prevenir el agotamiento de sockets en SQLite.
+- **Cumplimiento Fiscal SENIAT**: Implementación de la Providencia SNAT/2024/000102. Generación automática de Números de Factura y Control, integración con Imprenta Digital simulada y snapshots de datos de clientes.
+- **Unificación de Sucursales**: El método `getBranches` se centralizó en `OrganizationRepository`.
+- **Caché de Conexiones**: Se implementó un pool de clientes Prisma con estrategia LRU (Limitado a 50).
 
 ### 🚀 Optimizaciones sugeridas:
-1. **Typed Actions**: Migrar los Server Actions para usar `next-safe-action` para validación de tipos más robusta.
-2. **Batch Sync**: El proceso de sincronización offline actualmente procesa registros uno a uno. Implementar `createMany` para mejorar el rendimiento notablemente.
+1. **Digital Signature**: Integrar una firma XML real para los documentos generados si se requiere interoperabilidad directa con el portal de SENIAT.
+2. **Typed Actions**: Migrar los Server Actions para usar `next-safe-action`.
+3. **Batch Sync**: Implementar `createMany` para la sincronización offline.

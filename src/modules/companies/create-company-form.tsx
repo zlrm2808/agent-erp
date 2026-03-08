@@ -17,6 +17,8 @@ const createCompanySchema = z.object({
     phone: z.string().optional(),
     branches: z.array(z.object({
         name: z.string().min(1, "El nombre de la sucursal es requerido"),
+        legalName: z.string().optional(),
+        rif: z.string().optional(),
         address: z.string().optional(),
     })).min(1, "Debe agregar al menos una sucursal"),
 });
@@ -34,9 +36,10 @@ export function CreateCompanyForm({ onSuccess }: { onSuccess: () => void }) {
             rif: "",
             address: "",
             phone: "",
-            branches: [{ name: "Sede Principal", address: "" }],
+            branches: [{ name: "Sede Principal", legalName: "", rif: "", address: "" }],
         },
     });
+
 
     const { fields, append, remove } = useFieldArray({
         control: form.control,
@@ -145,14 +148,34 @@ export function CreateCompanyForm({ onSuccess }: { onSuccess: () => void }) {
                                 </Button>
                             )}
                         </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] text-slate-500 uppercase font-bold">Razón Social (Opcional)</Label>
+                                <Input
+                                    {...form.register(`branches.${index}.legalName`)}
+                                    placeholder="Si es distinta a la empresa"
+                                    className="bg-white h-8 text-xs"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] text-slate-500 uppercase font-bold">RIF Propio (Opcional)</Label>
+                                <Input
+                                    {...form.register(`branches.${index}.rif`)}
+                                    placeholder="J-00000000-0"
+                                    className="bg-white h-8 text-xs"
+                                />
+                            </div>
+                        </div>
+
                         <div className="space-y-2">
-                            <Label className="text-xs text-slate-600">Dirección de la Sucursal</Label>
+                            <Label className="text-[10px] text-slate-500 uppercase font-bold">Dirección de la Sucursal</Label>
                             <Input
                                 {...form.register(`branches.${index}.address`)}
-                                placeholder="Opcional"
-                                className="bg-white"
+                                placeholder="Dirección física de esta sede (Opcional)"
+                                className="bg-white text-xs"
                             />
                         </div>
+
                     </div>
                 ))}
 

@@ -12,6 +12,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useBranch } from "@/components/providers/branch-provider";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const productSchema = z.object({
     sku: z.string().min(1, "El SKU es requerido"),
@@ -21,6 +22,7 @@ const productSchema = z.object({
     salePrice: z.coerce.number().min(0, "Debe ser mayor o igual a 0"),
     stock: z.coerce.number().int().min(0, "Debe ser mayor o igual a 0"),
     minStock: z.coerce.number().int().min(0, "Debe ser mayor o igual a 0"),
+    isExempt: z.boolean().default(false),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -36,6 +38,7 @@ interface ProductFormProps {
         salePrice: number;
         stock: number;
         minStock: number;
+        isExempt?: boolean;
     } | null;
 }
 
@@ -56,6 +59,7 @@ export function ProductForm({ companyId, initialData }: ProductFormProps) {
             salePrice: initialData.salePrice,
             stock: initialData.stock,
             minStock: initialData.minStock,
+            isExempt: initialData.isExempt || false,
         } : {
             sku: "",
             name: "",
@@ -64,6 +68,7 @@ export function ProductForm({ companyId, initialData }: ProductFormProps) {
             salePrice: 0,
             stock: 0,
             minStock: 5,
+            isExempt: false,
         },
     });
 
@@ -78,6 +83,7 @@ export function ProductForm({ companyId, initialData }: ProductFormProps) {
             formData.append("salePrice", values.salePrice.toString());
             formData.append("stock", values.stock.toString());
             formData.append("minStock", values.minStock.toString());
+            formData.append("isExempt", values.isExempt.toString());
 
             if (selectedBranchId) {
                 formData.append("branchId", selectedBranchId);
@@ -147,6 +153,22 @@ export function ProductForm({ companyId, initialData }: ProductFormProps) {
                     <Label htmlFor="minStock">Stock Mínimo</Label>
                     <Input id="minStock" type="number" min="0" step="1" {...form.register("minStock")} />
                     {form.formState.errors.minStock && <p className="text-destructive text-xs">{form.formState.errors.minStock.message}</p>}
+                </div>
+            </div>
+
+            <div className="flex items-center space-x-2 bg-[#f3f2f1] p-4 rounded-sm border border-[#e1dfdd]">
+                <Checkbox
+                    id="isExempt"
+                    checked={form.watch("isExempt")}
+                    onCheckedChange={(checked) => form.setValue("isExempt", !!checked)}
+                />
+                <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="isExempt" className="text-sm font-bold text-[#323130] cursor-pointer">
+                        PRODUCTO EXENTO (E)
+                    </Label>
+                    <p className="text-[11px] text-[#605e5c]">
+                        Marcar si el producto no genera IVA (Art. 18 Ley de IVA / Prov. 0102).
+                    </p>
                 </div>
             </div>
 

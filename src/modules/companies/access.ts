@@ -8,10 +8,10 @@ export async function assertCompanyAccess(companyId: string) {
         throw new Error("UNAUTHORIZED");
     }
 
-    const hasAccess = await CompanyRepository.userHasAccess(user.id, companyId);
-    if (!hasAccess) {
+    const membership = await CompanyRepository.getUserMembership(user.id, companyId);
+    if (!membership) {
         throw new Error("FORBIDDEN_COMPANY");
     }
 
-    return user;
+    return { ...user, membership };
 }

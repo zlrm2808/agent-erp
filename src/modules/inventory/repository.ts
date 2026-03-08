@@ -35,6 +35,7 @@ export const InventoryRepository = {
             salePrice?: number;
             minStock?: number;
             stock?: number;
+            isExempt?: boolean;
             branchId?: string | null;
             accountingGroupId?: string | null;
         },
@@ -56,6 +57,7 @@ export const InventoryRepository = {
             salePrice?: number;
             minStock?: number;
             stock?: number;
+            isExempt?: boolean;
             branchId?: string | null;
             accountingGroupId?: string | null;
         },
@@ -138,7 +140,7 @@ export const InventoryRepository = {
             const [products, movedProductsInWindow] = await Promise.all([
                 tenantDb.product.findMany({
                     where,
-                    select: { id: true, stock: true, costPrice: true, minStock: true },
+                    select: { id: true, name: true, stock: true, costPrice: true, salePrice: true, minStock: true },
                 }),
                 tenantDb.inventoryMovement.findMany({
                     where: {
@@ -152,19 +154,31 @@ export const InventoryRepository = {
 
             const movedProductIds = new Set(movedProductsInWindow.map((movement: any) => movement.productId));
 
+            const totalCost = products.reduce((acc: number, curr: any) => acc + curr.stock * (curr.costPrice || 0), 0);
+            const totalSaleValue = products.reduce((acc: number, curr: any) => acc + curr.stock * (curr.salePrice || 0), 0);
+
+            const topProducts = products
+                .map((p: any) => ({ name: p.name, value: p.stock * (p.costPrice || 0) }))
+                .sort((a: any, b: any) => b.value - a.value)
+                .slice(0, 5);
+
             return {
                 totalProducts: products.length,
-                totalValue: products.reduce((acc: number, curr: any) => acc + curr.stock * curr.costPrice, 0),
+                totalCost,
+                totalSaleValue,
                 lowStock: products.filter((p: any) => p.stock <= p.minStock).length,
                 inactiveProducts: products.filter((product: any) => !movedProductIds.has(product.id)).length,
+                topProducts,
             };
         } catch (error) {
             console.error(`[InventoryRepository] Error in getDashboardStats for ${companyId}:`, error);
             return {
                 totalProducts: 0,
-                totalValue: 0,
+                totalCost: 0,
+                totalSaleValue: 0,
                 lowStock: 0,
-                inactiveProducts: 0
+                inactiveProducts: 0,
+                topProducts: []
             };
         }
     },

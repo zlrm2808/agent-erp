@@ -30,6 +30,9 @@ model User {
   username          String              @unique
   password          String // Should be hashed
   realName          String?
+  position          String?             @default("Consultor")
+  department        String?             @default("Administración")
+  photo             String?             // URL or Base64
   isActive          Boolean             @default(true)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -41,11 +44,23 @@ model User {
 model UserCompany {
   userId    String
   companyId String
-  role      String  @default("operator") // admin, supervisor, operator
+  role      String  @default("operator") // Legacy role
+  profileId String? // New profile link
   user      User    @relation(fields: [userId], references: [id])
   company   Company @relation(fields: [companyId], references: [id])
+  profile   Profile? @relation(fields: [profileId], references: [id])
 
   @@id([userId, companyId])
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  companyId   String?  // Null for system-wide profiles
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  memberships UserCompany[]
 }
 
 model Session {

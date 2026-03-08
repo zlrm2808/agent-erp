@@ -91,12 +91,14 @@ function generateGuide() {
 
     markdown += `---\n\n## 🧠 Análisis de IA (Redundancias y Optimizaciones)\n\n`;
     markdown += `### ✅ Mejoras realizadas recientemente:\n`;
-    markdown += `- **Unificación de Sucursales**: El método \`getBranches\` se centralizó en \`OrganizationRepository\`, eliminando la redundancia en el módulo de empresas.\n`;
-    markdown += `- **Caché de Conexiones**: Se implementó un pool de clientes Prisma con estrategia LRU (Limitado a 50) para optimizar memoria y prevenir el agotamiento de sockets en SQLite.\n\n`;
+    markdown += `- **Cumplimiento Fiscal SENIAT**: Implementación de la Providencia SNAT/2024/000102. Generación automática de Números de Factura y Control, integración con Imprenta Digital simulada y snapshots de datos de clientes.\n`;
+    markdown += `- **Unificación de Sucursales**: El método \`getBranches\` se centralizó en \`OrganizationRepository\`.\n`;
+    markdown += `- **Caché de Conexiones**: Se implementó un pool de clientes Prisma con estrategia LRU (Limitado a 50).\n\n`;
 
     markdown += `### 🚀 Optimizaciones sugeridas:\n`;
-    markdown += `1. **Typed Actions**: Migrar los Server Actions para usar \`next-safe-action\` para validación de tipos más robusta.\n`;
-    markdown += `2. **Batch Sync**: El proceso de sincronización offline actualmente procesa registros uno a uno. Implementar \`createMany\` para mejorar el rendimiento notablemente.\n`;
+    markdown += `1. **Digital Signature**: Integrar una firma XML real para los documentos generados si se requiere interoperabilidad directa con el portal de SENIAT.\n`;
+    markdown += `2. **Typed Actions**: Migrar los Server Actions para usar \`next-safe-action\`.\n`;
+    markdown += `3. **Batch Sync**: Implementar \`createMany\` para la sincronización offline.\n`;
 
 
     fs.writeFileSync(OUTPUT_FILE, markdown);

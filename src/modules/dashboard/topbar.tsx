@@ -48,7 +48,7 @@ export function Topbar({
   }, [branches, selectedBranchId, setSelectedBranchId]);
 
   return (
-    <header className="h-12 bg-[#001d3d] text-white flex items-center justify-between px-2 fixed top-0 left-0 right-0 z-50 shadow-sm">
+    <header className="h-12 bg-[#001d3d] text-white flex items-center justify-between px-2 z-50 shadow-sm shrink-0">
       {/* Left: Brand & Business Unit */}
       <div className="flex items-center h-full">
         <Button variant="ghost" size="icon" className="h-9 w-9 p-2 hover:bg-white/10 rounded-sm mr-1 text-white">
@@ -99,7 +99,6 @@ export function Topbar({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <Breadcrumb />
         </div>
 
         {/* ... rest of your left side ... */}

@@ -14,6 +14,7 @@ const productSchema = z.object({
     salePrice: z.coerce.number().min(0, "El precio de venta debe ser mayor o igual a 0"),
     stock: z.coerce.number().int().min(0, "El stock inicial debe ser mayor o igual a 0"),
     minStock: z.coerce.number().int().min(0, "El stock mínimo debe ser mayor o igual a 0"),
+    isExempt: z.boolean().default(false),
     branchId: z.string().optional().nullable(),
     accountingGroupId: z.string().optional().nullable(),
 });
@@ -33,6 +34,7 @@ export async function createProductAction(companyId: string, formData: FormData)
         salePrice: formData.get("salePrice"),
         stock: formData.get("stock"),
         minStock: formData.get("minStock"),
+        isExempt: formData.get("isExempt") === "on" || formData.get("isExempt") === "true",
         branchId: formData.get("branchId") || null,
         accountingGroupId: formData.get("accountingGroupId") || null,
     };
@@ -70,6 +72,7 @@ export async function updateProductAction(companyId: string, productId: string, 
         salePrice: formData.get("salePrice"),
         stock: formData.get("stock"),
         minStock: formData.get("minStock"),
+        isExempt: formData.get("isExempt") === "on" || formData.get("isExempt") === "true",
         branchId: formData.get("branchId") || null,
         accountingGroupId: formData.get("accountingGroupId") || null,
     };

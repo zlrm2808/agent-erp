@@ -26,10 +26,25 @@ export const CompanyRepository = {
     },
 
     /**
+     * Finds all companies in the system
+     */
+    async findAll() {
+        return db.company.findMany();
+    },
+
+    /**
      * Validates if a user has access to company.
      */
     async userHasAccess(userId: string, companyId: string) {
-        const membership = await db.userCompany.findUnique({
+        const membership = await this.getUserMembership(userId, companyId);
+        return Boolean(membership);
+    },
+
+    /**
+     * Get user membership details (role)
+     */
+    async getUserMembership(userId: string, companyId: string) {
+        return db.userCompany.findUnique({
             where: {
                 userId_companyId: {
                     userId,
@@ -37,9 +52,8 @@ export const CompanyRepository = {
                 },
             },
         });
-
-        return Boolean(membership);
     },
+
 
 
 
