@@ -28,28 +28,33 @@ import { toast } from "@/lib/toast";
 export function EmployeeManager({
     companyId,
     initialEmployees = [],
+    departments = [],
+    positions = [],
     forceShowForm = false,
     onFormClose
 }: {
     companyId: string,
     initialEmployees: any[],
+    departments?: any[],
+    positions?: any[],
     forceShowForm?: boolean,
     onFormClose?: () => void
 }) {
-    const [employees, setEmployees] = useState(initialEmployees);
     const [isPending, startTransition] = useTransition();
 
     const showForm = forceShowForm;
 
     const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+        const form = e.currentTarget as HTMLFormElement;
+        const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
         startTransition(async () => {
             const res = await createEmployeeAction(companyId, data);
             if (res.success) {
                 toast({ title: "Empleado Registrado", description: "El trabajador ha sido añadido a la nómina." });
+                form.reset();
                 if (onFormClose) onFormClose();
             } else {
                 toast({ title: "Error", description: res.error, variant: "destructive" });
@@ -99,11 +104,21 @@ export function EmployeeManager({
                         </div>
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase text-[#605e5c]">Cargo</Label>
-                            <Input name="position" placeholder="Analista Contable" className="h-9" />
+                            <select name="position" className="w-full flex h-9 rounded-sm border border-[#d2d0ce] bg-white px-3 py-2 text-xs">
+                                <option value="">-- Seleccionar Cargo --</option>
+                                {positions.map((p: any) => (
+                                    <option key={p.id} value={p.name}>{p.name}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase text-[#605e5c]">Departamento</Label>
-                            <Input name="department" placeholder="Administración" className="h-9" />
+                            <select name="department" className="w-full flex h-9 rounded-sm border border-[#d2d0ce] bg-white px-3 py-2 text-xs">
+                                <option value="">-- Seleccionar Departamento --</option>
+                                {departments.map((d: any) => (
+                                    <option key={d.id} value={d.name}>{d.name}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase text-[#605e5c]">Sueldo Mensual (Bs.)</Label>
@@ -151,14 +166,14 @@ export function EmployeeManager({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {employees.length === 0 ? (
+                        {initialEmployees.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-32 text-center text-[#a19f9d] italic">
                                     No hay empleados registrados.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            employees.map((emp) => (
+                            initialEmployees.map((emp) => (
                                 <TableRow key={emp.id} className="hover:bg-[#faf9f8]">
                                     <TableCell>
                                         <div className="flex flex-col">

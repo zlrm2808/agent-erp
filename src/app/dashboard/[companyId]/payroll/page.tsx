@@ -7,9 +7,11 @@ export default async function PayrollPage({
     params: Promise<{ companyId: string }>;
 }) {
     const { companyId } = await params;
-    const [employees, history] = await Promise.all([
+    const [employees, history, departments, positions] = await Promise.all([
         PayrollRepository.getEmployees(companyId),
-        PayrollRepository.getPayrollHistory(companyId)
+        PayrollRepository.getPayrollHistory(companyId),
+        PayrollRepository.getDepartments(companyId),
+        PayrollRepository.getPositions(companyId)
     ]);
 
     return (
@@ -17,6 +19,8 @@ export default async function PayrollPage({
             companyId={companyId}
             initialEmployees={employees}
             initialHistory={history}
+            departments={departments}
+            positions={positions}
         />
     );
 }

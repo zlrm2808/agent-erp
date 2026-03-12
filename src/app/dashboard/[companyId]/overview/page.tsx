@@ -70,8 +70,8 @@ export default async function OverviewPage({
         <div className="grid gap-px bg-[#e1dfdd] border border-[#e1dfdd] md:grid-cols-2 lg:grid-cols-4 shadow-sm overflow-hidden rounded-sm">
           <StatsCard title="Productos" value={stats.totalProducts.toString()} description="registros activos" icon={Package} />
           <StatsCard
-            title="Valor Inventario"
-            value={`$${stats.totalValue.toLocaleString("es-VE", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`}
+            title="Costo Inventario"
+            value={`$${stats.totalCost.toLocaleString("es-VE", { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`}
             description="costo total"
             icon={TrendingUp}
           />

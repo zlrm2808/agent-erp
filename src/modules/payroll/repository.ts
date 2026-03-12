@@ -184,6 +184,29 @@ export const PayrollRepository = {
     },
 
     /**
+     * Masters: Departments and Job Positions
+     */
+    async getDepartments(companyId: string) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.department.findMany({ orderBy: { name: 'asc' } });
+    },
+
+    async createDepartment(companyId: string, name: string) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.department.create({ data: { name } });
+    },
+
+    async getPositions(companyId: string) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.jobPosition.findMany({ orderBy: { name: 'asc' } });
+    },
+
+    async createPosition(companyId: string, name: string) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.jobPosition.create({ data: { name } });
+    },
+
+    /**
      * Get Payroll History
      */
     async getPayrollHistory(companyId: string) {

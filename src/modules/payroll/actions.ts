@@ -35,9 +35,37 @@ export async function createEmployeeAction(companyId: string, data: any) {
             }
         });
 
-        revalidatePath(`/dashboard/${companyId}/payroll/employees`);
+        revalidatePath(`/dashboard/${companyId}/payroll`);
         return { success: true };
     } catch (e: any) {
+        if (e.code === "P2002") {
+            return { error: "Ya existe un empleado con este número de cédula (RIF). Verifique los datos." };
+        }
+        return { error: e.message };
+    }
+}
+
+// --- Masters ---
+export async function createDepartmentAction(companyId: string, name: string) {
+    try {
+        await assertCompanyAccess(companyId);
+        await PayrollRepository.createDepartment(companyId, name);
+        revalidatePath(`/dashboard/${companyId}/payroll/masters`);
+        return { success: true };
+    } catch (e: any) {
+        if (e.code === "P2002") return { error: "El departamento ya existe." };
+        return { error: e.message };
+    }
+}
+
+export async function createPositionAction(companyId: string, name: string) {
+    try {
+        await assertCompanyAccess(companyId);
+        await PayrollRepository.createPosition(companyId, name);
+        revalidatePath(`/dashboard/${companyId}/payroll/masters`);
+        return { success: true };
+    } catch (e: any) {
+        if (e.code === "P2002") return { error: "El cargo ya existe." };
         return { error: e.message };
     }
 }
