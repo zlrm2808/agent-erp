@@ -58,6 +58,11 @@ export function PayrollSettingsForm({ companyId, params }: { companyId: string, 
                                 <Label className="text-xs font-bold text-[#605e5c]">Unidad Tributaria (U.T.)</Label>
                                 <Input name="taxUnit" type="number" step="0.01" defaultValue={params.taxUnit} className="font-mono text-amber-700" />
                             </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-[#605e5c]">Tope ISLR (U.T. Anual)</Label>
+                                <Input name="islrThreshold" type="number" defaultValue={params.islrThreshold || 1000} className="font-mono text-blue-700" />
+                                <p className="text-[10px] text-[#a19f9d]">Mínimo de UT anuales para ser sujeto de retención (Normalmente 1000 UT).</p>
+                            </div>
                         </div>
                     </div>
 

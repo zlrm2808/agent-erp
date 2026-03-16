@@ -249,34 +249,109 @@ model JobPosition {
 
 model Employee {
   id              String   @id @default(cuid())
+  employeeCode    String?  @unique
   firstName       String
+  middleName      String?
   lastName        String
+  secondLastName  String?
   nationality     String   @default("V") // V, E, P
   idNumber        String   @unique // Cédula
   rif             String?  @unique
   birthDate       DateTime?
+  birthPlace      String?
+  birthState      String?
   gender          String?  // M, F
+  maritalStatus   String?  // Soltero, Casado, etc.
   email           String?
   phone           String?
   address         String?
+  address2        String?
+  address3        String?
+  phone2          String?
+  mobilePhone     String?
+  pin             String?
   
   // Job Info
   position        String?
   department      String?
+  functionalUnit  String?
+  group           String?
+  businessUnit    String?
+  costCenter      String?
+  shift           String?  // S, M, T, N
+  employeeCondition String? // Activo, Inactivo, etc.
+  payrollType     String?  // Semanal, Quincenal, etc.
+  category        String?  // Obrero, Empleado, etc.
+  instructionLevel String?
+  professionalStart DateTime?
   hireDate        DateTime
   terminationDate DateTime?
+  exitDate        DateTime?
+  exitMotive      String?
+  tabulator       Float    @default(0)
+  contractEndDate DateTime?
+  vacationStartDate DateTime?
+  vacationEndDate DateTime?
+  lastSocialBenefitsDeposit DateTime?
   isActive        Boolean  @default(true)
   
   // Salary Info
   salaryType      String   @default("MONTHLY") // MONTHLY, DAILY
   baseSalary      Float    @default(0) // Sueldo base
   
-  // Bank Info
+  // Bank & Benefits Info
+  paymentMethod   String?  // Efectivo, Depósito, etc.
   bankName        String?
   accountNumber   String?
-  accountType     String?  // Savings, Checking
+  accountType     String?
+  savingsAccount  String?
+  savingsEmployeeContribution Float @default(0)
+  savingsCompanyContribution Float @default(0)
+  foodPension     Float    @default(0)
+  utilitiesPercentage Float @default(0)
+  medicalLeavePercentage Float @default(0)
+  islrQ1          Float    @default(0)
+  islrQ2          Float    @default(0)
+  islrQ3          Float    @default(0)
+  islrQ4          Float    @default(0)
+  unionFee        Float    @default(0)
+  vehicle         Float    @default(0)
+  deductSSO       Boolean  @default(true)
+  deductFAOV      Boolean  @default(true)
+  hcmRetention    Float    @default(0)
+  benefitsDestination String?
+  trustAccount142 String?
+
+  // Personal identifiers
+  passportNumber  String?
+  militaryService String?
+  ssn             String?
+  licenseGrade    String?
+  handedness      String?  // Diestro, Zurdo
+  height          Float    @default(0)
+  weight          Float    @default(0)
+  fingerprintId   String?
   
   payrollDetails  PayrollDetail[]
+  fixedConcepts   EmployeeConcept[]
+  loans           Loan[]
+  familyDependents FamilyDependent[]
+  islrPercentage  Float    @default(0) // Percentage from AR-I
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model FamilyDependent {
+  id              String   @id @default(cuid())
+  employeeId      String
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  firstName       String
+  lastName        String
+  relationship    String   // HIJO, CONYUGE, PADRE, MADRE, OTRO
+  birthDate       DateTime
+  idNumber        String?  // Optional for children
+  gender          String?  // M, F
+  isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -285,6 +360,7 @@ model Payroll {
   id              String   @id @default(cuid())
   type            String   @default("QUINCENAL") // QUINCENAL, MENSUAL, ESPECIAL
   period          String   // e.g., "2024-03-01 al 2024-03-15"
+  description     String?  // Custom title for the receipt
   startDate       DateTime
   endDate         DateTime
   status          String   @default("DRAFT") // DRAFT, PROCESSED, CLOSED, CANCELLED
@@ -337,6 +413,56 @@ model PayrollConcept {
   formula         String?  // e.g., "salary / 30 * days"
   isActive        Boolean  @default(true)
   isStatutory     Boolean  @default(false) // IVSS, LPH, etc.
+  employeeConcepts EmployeeConcept[]
+}
+
+model EmployeeConcept {
+  id              String   @id @default(cuid())
+  employeeId      String
+  conceptId       String
+  amount          Float?   // Fixed amount if not by formula
+  isActive        Boolean  @default(true)
+  
+  employee        Employee       @relation(fields: [employeeId], references: [id])
+  concept         PayrollConcept @relation(fields: [conceptId], references: [id])
+  
+  @@unique([employeeId, conceptId])
+}
+
+model PayrollConstant {
+  id              String   @id @default(cuid())
+  key             String   @unique // e.g., UNIDAD_TRIBUTARIA
+  name            String
+  value           Float
+  description     String?
+  updatedAt       DateTime @updatedAt
+}
+
+model Loan {
+  id              String   @id @default(cuid())
+  employeeId      String
+  amount          Float
+  description     String?
+  startDate       DateTime
+  totalInstallments Int
+  remainingInstallments Int
+  installmentAmount Float
+  status          String   @default("ACTIVE") // ACTIVE, PAID, CANCELLED
+  
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  installments    LoanInstallment[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model LoanInstallment {
+  id              String   @id @default(cuid())
+  loanId          String
+  payrollDetailId String?  // Linked to the payroll that paid it
+  amount          Float
+  paidAt          DateTime @default(now())
+  
+  loan            Loan     @relation(fields: [loanId], references: [id])
 }
 
 model PayrollParameter {
@@ -348,5 +474,6 @@ model PayrollParameter {
   faovRate        Float    @default(0.01)
   lpeRate         Float    @default(0.005)
   maxIvssSalary   Float    @default(5)   // Max 5 salaries for IVSS cap
+  islrThreshold   Float    @default(1000) // UT per year threshold
   updatedAt       DateTime @updatedAt
 }

@@ -10,18 +10,24 @@ export default async function PayrollMastersPage({
     params: Promise<{ companyId: string }>;
 }) {
     const { companyId } = await params;
-    const [departments, positions] = await Promise.all([
+    const [departments, positions, concepts, constants] = await Promise.all([
         PayrollRepository.getDepartments(companyId),
-        PayrollRepository.getPositions(companyId)
+        PayrollRepository.getPositions(companyId),
+        PayrollRepository.getConcepts(companyId),
+        PayrollRepository.getConstants(companyId)
     ]);
 
     return (
         <div className="space-y-0">
             <R.RibbonContainer>
                 <div className="flex h-28 overflow-x-auto no-scrollbar items-stretch bg-white">
-                    <R.RibbonGroup label="Datos Maestros">
+                    <R.RibbonGroup label="Estructura">
                         <R.RibbonBtnLarge icon="Building2" label="Departamentos" color="text-[#0078d4]" />
                         <R.RibbonBtnLarge icon="Briefcase" label="Cargos" color="text-[#8764b8]" />
+                    </R.RibbonGroup>
+                    <R.RibbonGroup label="Configuración">
+                        <R.RibbonBtnLarge icon="BadgeCent" label="Conceptos" color="text-[#107c10]" />
+                        <R.RibbonBtnLarge icon="Settings" label="Constantes" color="text-[#605e5c]" />
                     </R.RibbonGroup>
                     <R.RibbonGroup label="Módulo">
                         <R.RibbonBtnLarge icon="ArrowLeft" label="Volver" href={`/dashboard/${companyId}/payroll`} />
@@ -30,20 +36,13 @@ export default async function PayrollMastersPage({
             </R.RibbonContainer>
 
             <div className="p-6">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-black text-[#323130] tracking-tight uppercase flex items-center gap-2">
-                        <Building2 className="w-6 h-6 text-[#0078d4]" />
-                        Datos Maestros de Nómina
-                    </h1>
-                    <p className="text-xs text-[#605e5c] mt-1">
-                        Configure los departamentos y cargos que estarán disponibles al registrar nuevos empleados.
-                    </p>
-                </div>
 
                 <PayrollMastersClient
                     companyId={companyId}
                     initialDepartments={departments}
                     initialPositions={positions}
+                    initialConcepts={concepts}
+                    initialConstants={constants}
                 />
             </div>
         </div>

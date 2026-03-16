@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +19,13 @@ import { generatePayrollAction } from "../actions";
 import { toast } from "@/lib/toast";
 
 export function PayrollGenerator({ companyId }: { companyId: string }) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
     const [formData, setFormData] = useState({
         type: "QUINCENAL",
+        description: "",
         startDate: "",
         endDate: ""
     });
@@ -72,6 +77,17 @@ export function PayrollGenerator({ companyId }: { companyId: string }) {
                                         <option value="ESPECIAL">BONIFICACIÓN ESPECIAL / OTROS</option>
                                     </optgroup>
                                 </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-[#605e5c] uppercase">Título del Recibo (Opcional)</Label>
+                                <Input
+                                    type="text"
+                                    placeholder="Ej: Vacaciones 2024, Bono Dic..."
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    className="h-10"
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -128,7 +144,15 @@ export function PayrollGenerator({ companyId }: { companyId: string }) {
                                 <span className="font-mono">PAGADA</span>
                             </div>
                         </div>
-                        <Button variant="ghost" className="mt-8 w-full border border-white/20 text-white hover:bg-white/10 text-xs h-9">
+                        <Button
+                            variant="ghost"
+                            className="mt-8 w-full border border-white/20 text-white hover:bg-white/10 text-xs h-9"
+                            onClick={() => {
+                                const p = new URLSearchParams(searchParams);
+                                p.set('view', 'history');
+                                router.push(`${pathname}?${p.toString()}`);
+                            }}
+                        >
                             Ver Histórico <History className="ml-2 w-4 h-4" />
                         </Button>
                     </div>

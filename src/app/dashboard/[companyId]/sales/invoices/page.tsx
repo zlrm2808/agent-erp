@@ -47,21 +47,7 @@ export default async function InvoicesPage({
                 </div>
             </R.RibbonContainer>
 
-            <div className="px-6 py-6 border-b border-[#e1dfdd] bg-white mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-emerald-50 rounded-sm">
-                        <ReceiptText className="text-emerald-600 w-6 h-6" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-black text-[#323130] tracking-tight uppercase">
-                            Facturación Fiscal
-                        </h2>
-                        <p className="text-[11px] text-[#605e5c] font-medium">DOCUMENTOS SEGÚN SNAT/2024/000102 | AGENT ERP</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="px-6 pb-12">
+            <div className="px-6 py-6 pb-12">
                 <InvoiceList invoices={invoices} companyId={companyId} />
             </div>
         </div>

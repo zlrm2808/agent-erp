@@ -11,16 +11,7 @@ export default async function PayrollSettingsPage({
     const payrollParams = await PayrollRepository.getParameters(companyId);
 
     return (
-        <div className="space-y-8 mt-12">
-            <div className="flex flex-col gap-1 pb-6 border-b border-[#e1dfdd]">
-                <h1 className="text-3xl font-black text-[#323130] tracking-tighter flex items-center gap-3">
-                    <Settings className="w-8 h-8 text-[#605e5c]" /> Parametrización de Nómina
-                </h1>
-                <p className="text-sm text-[#605e5c]">
-                    Ajuste los valores legales base para garantizar cálculos correctos bajo la normativa venezolana.
-                </p>
-            </div>
-
+        <div className="space-y-8 mt-6">
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
                 <div className="xl:col-span-3">
                     <PayrollSettingsForm companyId={companyId} params={payrollParams} />

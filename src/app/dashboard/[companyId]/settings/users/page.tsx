@@ -35,21 +35,6 @@ export default async function UsersPage({ params }: { params: Promise<{ companyI
             </R.RibbonContainer>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#e1dfdd] pb-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-3 bg-sky-50 rounded-sm">
-                            <Users className="text-[#0078d4] w-6 h-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-[#323130] tracking-tight uppercase">
-                                Usuarios y Perfiles
-                            </h2>
-                            <p className="text-[11px] text-[#605e5c] font-medium uppercase tracking-wider">
-                                Gestión de accesos y seguridad de la empresa
-                            </p>
-                        </div>
-                    </div>
-                </div>
 
                 <div className="bg-white border border-[#e1dfdd] shadow-sm rounded-sm overflow-hidden">
                     <table className="w-full text-left border-collapse">

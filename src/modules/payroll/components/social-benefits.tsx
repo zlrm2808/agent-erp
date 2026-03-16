@@ -32,6 +32,11 @@ export function SocialBenefitsManager({ companyId, employees }: { companyId: str
         const guarantee = months * 5 * daily;
         const addDays = Math.min(Math.floor(months / 12) * 2, 30);
         const additional = addDays * daily;
+        const subtotal = guarantee + additional;
+
+        // Intereses sobre fideicomiso (Aprox. 16.5% anual prorrateado)
+        const annualRate = 0.165;
+        const interest = subtotal * (annualRate / 12) * months;
 
         return {
             months,
@@ -39,7 +44,8 @@ export function SocialBenefitsManager({ companyId, employees }: { companyId: str
             guaranteeAmount: guarantee,
             additionalDays: addDays,
             additionalAmount: additional,
-            total: guarantee + additional
+            interests: interest,
+            total: subtotal + interest
         };
     };
 
@@ -59,6 +65,7 @@ export function SocialBenefitsManager({ companyId, employees }: { companyId: str
                                 <TableHead className="text-[10px] font-bold">ANTIGÜEDAD</TableHead>
                                 <TableHead className="text-[10px] font-bold text-right">GARANTÍA (Bs.)</TableHead>
                                 <TableHead className="text-[10px] font-bold text-right">DÍAS ADIC.</TableHead>
+                                <TableHead className="text-[10px] font-bold text-right text-[#0078d4]">INTERESES (Bs.)</TableHead>
                                 <TableHead className="text-[10px] font-bold text-right">TOTAL ESTIMADO</TableHead>
                                 <TableHead className="w-[50px]"></TableHead>
                             </TableRow>
@@ -72,6 +79,7 @@ export function SocialBenefitsManager({ companyId, employees }: { companyId: str
                                         <TableCell className="text-xs text-[#605e5c]">{calc.months} Meses</TableCell>
                                         <TableCell className="text-right font-mono text-xs">Bs. {calc.guaranteeAmount.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</TableCell>
                                         <TableCell className="text-right text-xs">{calc.additionalDays} días</TableCell>
+                                        <TableCell className="text-right font-mono text-xs text-[#0078d4] font-bold">Bs. {calc.interests.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</TableCell>
                                         <TableCell className="text-right font-black text-[#107c10] text-xs">
                                             Bs. {calc.total.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                                         </TableCell>
@@ -95,19 +103,23 @@ export function SocialBenefitsManager({ companyId, employees }: { companyId: str
                         <div className="space-y-4">
                             <div className="flex justify-between items-center text-xs">
                                 <span className="text-[#605e5c]">Garantía Trimestral ({selectedEmployee.calc.guaranteeDays} d)</span>
-                                <span className="font-bold">Bs. {selectedEmployee.calc.guaranteeAmount.toLocaleString('es-VE')}</span>
+                                <span className="font-bold">Bs. {selectedEmployee.calc.guaranteeAmount.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</span>
                             </div>
                             <div className="flex justify-between items-center text-xs">
                                 <span className="text-[#605e5c]">Días Adicionales ({selectedEmployee.calc.additionalDays} d)</span>
-                                <span className="font-bold">Bs. {selectedEmployee.calc.additionalAmount.toLocaleString('es-VE')}</span>
+                                <span className="font-bold">Bs. {selectedEmployee.calc.additionalAmount.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</span>
                             </div>
-                            <div className="pt-3 border-t border-[#f3f2f1] flex justify-between items-center">
-                                <span className="text-xs font-black uppercase">Total Pasivo</span>
-                                <span className="text-lg font-black text-[#107c10]">Bs. {selectedEmployee.calc.total.toLocaleString('es-VE')}</span>
+                            <div className="flex justify-between items-center text-xs border-b border-[#f3f2f1] pb-3">
+                                <span className="text-[#0078d4] font-bold">Intereses Fideicomiso (aprox 16.5%)</span>
+                                <span className="font-bold text-[#0078d4]">Bs. {selectedEmployee.calc.interests.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="pt-3 flex justify-between items-center">
+                                <span className="text-xs font-black uppercase tracking-tighter">Total Acumulado</span>
+                                <span className="text-xl font-black text-[#107c10]">Bs. {selectedEmployee.calc.total.toLocaleString('es-VE', { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
 
-                        <Button className="w-full mt-6 bg-[#0078d4] h-9 text-xs uppercase font-bold tracking-widest">
+                        <Button className="w-full mt-6 bg-[#0078d4] h-9 text-xs uppercase font-bold tracking-widest" onClick={() => window.print()}>
                             Generar Constancia
                         </Button>
                     </div>

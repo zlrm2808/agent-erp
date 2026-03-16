@@ -17,19 +17,6 @@ export default async function SystemDatePage() {
             </R.RibbonContainer>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                <div className="flex items-center gap-3 border-b border-[#e1dfdd] pb-6">
-                    <div className="p-3 bg-blue-50 rounded-sm">
-                        <CalendarClock className="text-[#0078d4] w-6 h-6" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-black text-[#323130] tracking-tight uppercase">
-                            Fecha del Sistema
-                        </h2>
-                        <p className="text-[11px] text-[#605e5c] font-medium uppercase tracking-wider">
-                            Configuración de periodo de trabajo y simulación
-                        </p>
-                    </div>
-                </div>
 
                 <div className="bg-white p-8 border border-[#e1dfdd] shadow-sm rounded-sm">
                     <div className="grid md:grid-cols-2 gap-12">

@@ -24,7 +24,7 @@ export const PayrollRepository = {
     /**
      * Calculation engine for a payroll line item
      */
-    async calculatePayrollDetail(companyId: string, employee: any, payroll: any, params: any) {
+    async calculatePayrollDetail(companyId: string, employee: any, payroll: any, params: any, context: { constants: any[], employeeConcepts: any[], activeLoans: any[] }) {
         const earnings = [];
         const deductions = [];
 
@@ -50,7 +50,6 @@ export const PayrollRepository = {
         }
 
         // 2. Cestaticket (Art. 7 Cestaticket Socialista)
-        // If it's a specific CESTATICKET run, we pay the full month or the period
         if (isCestaticket || isQuincenal || isMensual || isSemanal) {
             const ctFactor = isSemanal ? (7 / 30) : (isQuincenal ? 0.5 : 1.0);
             earnings.push({
@@ -61,15 +60,50 @@ export const PayrollRepository = {
             });
         }
 
+        // 3. Process Fixed Employee Concepts (Asignaciones/Deducciones fijas)
+        for (const ec of context.employeeConcepts) {
+            const amount = ec.amount || 0;
+            if (ec.concept.type === "EARNING") {
+                earnings.push({
+                    code: ec.concept.code,
+                    name: ec.concept.name,
+                    type: "EARNING",
+                    amount: amount * factor // Multiplied by factor if it's a monthly bonus split in fortnights
+                });
+            } else {
+                deductions.push({
+                    code: ec.concept.code,
+                    name: ec.concept.name,
+                    type: "DEDUCTION",
+                    amount: amount * factor
+                });
+            }
+        }
+
+        // 4. Process Active Loans (Préstamos)
+        for (const loan of context.activeLoans) {
+            // Only deduct in the first fortnight if quincenal, or always if monthly/weekly
+            const shouldDeduct = !isQuincenal || (new Date(payroll.startDate).getDate() <= 15);
+
+            if (shouldDeduct && loan.remainingInstallments > 0) {
+                deductions.push({
+                    code: "800", // Loan code
+                    name: `Cuota Préstamo (${loan.totalInstallments - loan.remainingInstallments + 1}/${loan.totalInstallments})`,
+                    type: "DEDUCTION",
+                    amount: loan.installmentAmount,
+                    loanId: loan.id // Store internally to update later
+                });
+            }
+        }
+
         const totalEarningsBeforeDeductions = earnings.reduce((sum, item) => sum + item.amount, 0);
 
-        // --- DEDUCTIONS ---
-        // Deductions only apply if it's not a CESTATICKET run (which is a non-salary benefit)
+        // --- STATUTORY DEDUCTIONS (Ley) ---
         if (!isCestaticket && type !== "HONORARIOS") {
             const weeklySalary = (employee.baseSalary * 12) / 52;
-            const cappedWeekly = Math.min(weeklySalary, (params.minWage * 5 * 12) / 52);
+            const cappedWeekly = Math.min(weeklySalary, (params.minWage * params.maxIvssSalary * 12) / 52);
 
-            // 3. Social Security (IVSS)
+            // 5. IVSS (4%)
             const ivssAmount = cappedWeekly * weeks * params.ivssRate;
             deductions.push({
                 code: "501",
@@ -78,7 +112,7 @@ export const PayrollRepository = {
                 amount: ivssAmount
             });
 
-            // 4. Lost Policy (Paro Forzoso / RPE)
+            // 6. R.P.E. / Paro Forzoso (0.5%)
             const lpeAmount = cappedWeekly * weeks * params.lpeRate;
             deductions.push({
                 code: "502",
@@ -87,9 +121,13 @@ export const PayrollRepository = {
                 amount: lpeAmount
             });
 
-            // 5. FAOV / LPH (1% of base salary earnings)
-            const baseForFaov = earnings.find(e => e.code === "001")?.amount || 0;
-            const faovAmount = baseForFaov * params.faovRate;
+            // 7. F.A.O.V. (1% of base + other salary concepts)
+            // Note: Cestaticket and certain bonuses aren't salary, but most assigned concepts are.
+            const faovBase = earnings
+                .filter(e => e.code !== "005") // Exclude Cestaticket
+                .reduce((sum, it) => sum + it.amount, 0);
+
+            const faovAmount = faovBase * params.faovRate;
             if (faovAmount > 0) {
                 deductions.push({
                     code: "503",
@@ -97,6 +135,23 @@ export const PayrollRepository = {
                     type: "DEDUCTION",
                     amount: faovAmount
                 });
+            }
+
+            // 8. I.S.L.R. (Calculado sobre el total de asignaciones gravables según porcentaje AR-I)
+            if (employee.islrPercentage > 0) {
+                const taxableBase = earnings
+                    .filter(e => e.code !== "005") // Cestaticket no es gravable
+                    .reduce((sum, it) => sum + it.amount, 0);
+
+                const islrAmount = taxableBase * (employee.islrPercentage / 100);
+                if (islrAmount > 0) {
+                    deductions.push({
+                        code: "505",
+                        name: `I.S.L.R. (${employee.islrPercentage}%)`,
+                        type: "DEDUCTION",
+                        amount: islrAmount
+                    });
+                }
             }
         }
 
@@ -115,16 +170,28 @@ export const PayrollRepository = {
     /**
      * Generation of a full payroll run
      */
-    async generatePayroll(companyId: string, data: { type: string; startDate: Date; endDate: Date }) {
+    async generatePayroll(companyId: string, data: { type: string; description?: string; startDate: Date; endDate: Date }) {
         const tenantDb = await getTenantDb(companyId);
         const params = await this.getParameters(companyId);
 
-        const employees = await tenantDb.employee.findMany({ where: { isActive: true } });
+        // Fetch all context data once
+        const [employees, constants, globalConcepts] = await Promise.all([
+            tenantDb.employee.findMany({
+                where: { isActive: true },
+                include: {
+                    fixedConcepts: { include: { concept: true }, where: { isActive: true } },
+                    loans: { where: { status: "ACTIVE" } }
+                }
+            }),
+            tenantDb.payrollConstant.findMany(),
+            tenantDb.payrollConcept.findMany({ where: { isActive: true } })
+        ]);
 
         return tenantDb.$transaction(async (tx) => {
             const payroll = await tx.payroll.create({
                 data: {
                     type: data.type,
+                    description: data.description,
                     startDate: data.startDate,
                     endDate: data.endDate,
                     period: `${data.startDate.toISOString().split('T')[0]} - ${data.endDate.toISOString().split('T')[0]}`,
@@ -136,7 +203,11 @@ export const PayrollRepository = {
             let globalDeductions = 0;
 
             for (const emp of employees) {
-                const calc = await this.calculatePayrollDetail(companyId, emp, payroll, params);
+                const calc = await this.calculatePayrollDetail(companyId, emp, payroll, params, {
+                    constants,
+                    employeeConcepts: (emp as any).fixedConcepts,
+                    activeLoans: (emp as any).loans
+                });
 
                 const detail = await tx.payrollDetail.create({
                     data: {
@@ -150,6 +221,7 @@ export const PayrollRepository = {
                         totalNet: calc.totalNet,
                         items: {
                             create: [...calc.earnings, ...calc.deductions].map(it => ({
+                                conceptId: (it as any).conceptId,
                                 code: it.code,
                                 name: it.name,
                                 type: it.type,
@@ -158,6 +230,33 @@ export const PayrollRepository = {
                         }
                     }
                 });
+
+                // Update Loan balances if installments were deducted
+                const loanDeductions = calc.deductions.filter(d => (d as any).loanId);
+                for (const ld of loanDeductions) {
+                    const loanId = (ld as any).loanId;
+                    const amount = ld.amount;
+
+                    const loan = await tx.loan.findUnique({ where: { id: loanId } });
+                    if (loan) {
+                        const newRemaining = loan.remainingInstallments - 1;
+                        await tx.loan.update({
+                            where: { id: loanId },
+                            data: {
+                                remainingInstallments: newRemaining,
+                                status: newRemaining <= 0 ? "PAID" : "ACTIVE"
+                            }
+                        });
+
+                        await tx.loanInstallment.create({
+                            data: {
+                                loanId: loanId,
+                                payrollDetailId: detail.id,
+                                amount: amount
+                            }
+                        });
+                    }
+                }
 
                 globalEarnings += calc.totalEarnings;
                 globalDeductions += calc.totalDeductions;
@@ -180,7 +279,14 @@ export const PayrollRepository = {
      */
     async getEmployees(companyId: string) {
         const tenantDb = await getTenantDb(companyId);
-        return tenantDb.employee.findMany({ orderBy: { lastName: 'asc' } });
+        return tenantDb.employee.findMany({
+            orderBy: { lastName: 'asc' },
+            include: {
+                familyDependents: true,
+                fixedConcepts: { include: { concept: true } },
+                loans: { where: { status: 'ACTIVE' } }
+            }
+        });
     },
 
     /**
@@ -204,6 +310,72 @@ export const PayrollRepository = {
     async createPosition(companyId: string, name: string) {
         const tenantDb = await getTenantDb(companyId);
         return tenantDb.jobPosition.create({ data: { name } });
+    },
+
+    /**
+     * Masters: Concepts, Constants, Loans
+     */
+    async getConcepts(companyId: string) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.payrollConcept.findMany({ orderBy: { code: 'asc' } });
+    },
+
+    async createConcept(companyId: string, data: any) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.payrollConcept.create({ data });
+    },
+
+    async getConstants(companyId: string) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.payrollConstant.findMany({ orderBy: { key: 'asc' } });
+    },
+
+    async createConstant(companyId: string, data: any) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.payrollConstant.create({ data });
+    },
+
+    async getLoans(companyId: string, employeeId?: string) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.loan.findMany({
+            where: employeeId ? { employeeId } : {},
+            include: { employee: true, installments: true },
+            orderBy: { createdAt: 'desc' }
+        });
+    },
+
+    async createLoan(companyId: string, data: any) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.loan.create({
+            data: {
+                employeeId: data.employeeId,
+                amount: data.amount,
+                description: data.description,
+                startDate: new Date(data.startDate),
+                totalInstallments: parseInt(data.totalInstallments),
+                remainingInstallments: parseInt(data.totalInstallments),
+                installmentAmount: data.amount / parseInt(data.totalInstallments),
+                status: "ACTIVE"
+            }
+        });
+    },
+
+    async assignConceptToEmployee(companyId: string, data: { employeeId: string, conceptId: string, amount: number }) {
+        const tenantDb = await getTenantDb(companyId);
+        return tenantDb.employeeConcept.upsert({
+            where: {
+                employeeId_conceptId: {
+                    employeeId: data.employeeId,
+                    conceptId: data.conceptId
+                }
+            },
+            update: { amount: data.amount, isActive: true },
+            create: {
+                employeeId: data.employeeId,
+                conceptId: data.conceptId,
+                amount: data.amount
+            }
+        });
     },
 
     /**

@@ -30,6 +30,7 @@ interface PayrollDashboardClientProps {
   initialHistory: any[];
   departments: any[];
   positions: any[];
+  concepts: any[];
 }
 
 export function PayrollDashboardClient({
@@ -37,7 +38,8 @@ export function PayrollDashboardClient({
   initialEmployees,
   initialHistory,
   departments,
-  positions
+  positions,
+  concepts
 }: PayrollDashboardClientProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -78,6 +80,7 @@ export function PayrollDashboardClient({
                 icon="Printer"
                 label="Imprimir Recibos"
                 color="text-slate-600"
+                onClick={() => window.print()}
               />
             )}
             <R.RibbonBtnLarge
@@ -102,9 +105,9 @@ export function PayrollDashboardClient({
 
           {/* REPORTES Y EXPORTACIONES */}
           <R.RibbonGroup label="Reportes">
-            <R.RibbonBtnSmall icon="FileText" label="Listado de Personal" />
-            <R.RibbonBtnSmall icon="TrendingUp" label="Resumen de Costos" />
-            <R.RibbonBtnSmall icon="ShieldCheck" label="Prestaciones Acum." />
+            <R.RibbonBtnSmall icon="FileText" label="Listado de Personal" onClick={() => setView("employees")} />
+            <R.RibbonBtnSmall icon="TrendingUp" label="Resumen de Costos" onClick={() => setView("costs")} />
+            <R.RibbonBtnSmall icon="ShieldCheck" label="Prestaciones Acum." onClick={() => setView("benefits")} />
           </R.RibbonGroup>
 
           {/* CONFIGURACIÓN DEL MÓDULO */}
@@ -119,30 +122,17 @@ export function PayrollDashboardClient({
               label="Datos Maestros"
               href={`/dashboard/${companyId}/payroll/masters`}
             />
+            <R.RibbonBtnLarge
+              icon="Landmark"
+              label="Préstamos"
+              href={`/dashboard/${companyId}/payroll/loans`}
+            />
           </R.RibbonGroup>
         </div>
       </R.RibbonContainer>
 
-      {/* View Title Area (BC Style) */}
-      <div className="px-8 py-6 bg-white border-b border-[#e1dfdd] mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-blue-50 rounded-sm">
-            <BadgeCent className="text-[#0078d4] w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-[#323130] tracking-tight uppercase">
-              {activeView === "processing" && "Ejecución de Nómina"}
-              {activeView === "employees" && "Ficha Técnica de Personal"}
-              {activeView === "history" && "Histórico de Liquidaciones"}
-              {activeView === "benefits" && "Pasivos y Prestaciones Sociales"}
-            </h1>
-            <p className="text-[11px] text-[#605e5c] font-medium">MODULO DE CAPITAL HUMANO | AGENT ERP</p>
-          </div>
-        </div>
-      </div>
-
       {/* View Content Area */}
-      <div className="px-8 pb-12">
+      <div className="px-8 py-6 pb-12">
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-400">
           {activeView === "processing" && <PayrollGenerator companyId={companyId} />}
           {activeView === "employees" && (
@@ -151,6 +141,7 @@ export function PayrollDashboardClient({
               initialEmployees={initialEmployees}
               departments={departments}
               positions={positions}
+              concepts={concepts}
               forceShowForm={showEmployeeForm}
               onFormClose={() => setShowEmployeeForm(false)}
             />
